@@ -396,3 +396,46 @@ h1 {
 .logout-btn:hover {
     background-color: #dc2626;
 }
+
+/* =========================================
+   响应式调整 (Responsive Overrides)
+   ========================================= */
+
+@media screen and (min-width: 768px) {
+    /* 1. 调整导航栏，使其左右分散 (可选) */
+    .app-nav {
+        /* 如果您希望链接左右分散，而不是完全居中，可以取消注释 */
+        /* justify-content: space-between; */
+    }
+
+    /* 2. 调整预设网格，保证至少 4 列 */
+    .preset-grid {
+        grid-template-columns: repeat(4, 1fr);
+        /* 或者如果想让卡片更紧凑：
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        */
+    }
+
+    /* 3. 调整生成器网格，保证至少 3 列 */
+    .gen-grid {
+        grid-template-columns: repeat(3, 1fr);
+        /* 或者如果想让卡片更宽：
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        */
+    }
+
+    /* 4. 底部固定栏调整：确保输入框有足够的空间 */
+    .fixed-bar {
+        padding: 15px 40px; 
+    }
+}
+
+@media screen and (min-width: 1024px) {
+    /* 进一步优化大屏幕布局 */
+    .preset-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+    .gen-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
