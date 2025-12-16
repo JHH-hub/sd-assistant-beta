@@ -1,39 +1,16 @@
 // ==========================================
-// script.js - v1.3.1 (Security & Logic)
+// script.js - v3.0 (最终修复版 - 认证 & 结构)
 // ==========================================
 
-// 1. Supabase 配置 (已自动填入)
+// 1. 全局配置 (使用 var 避免重复声明错误)
 var SUPABASE_URL = 'https://mjmpvgyyeqalcocuizwb.supabase.co';
+// ⚠️ 确保这个 Anon Key 是你从 Supabase 后台复制的完整、正确的 Key
 var SUPABASE_ANON_KEY = 'seyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qbXB2Z3l5ZXFhbGNvY3VpendiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NzU1MzcsImV4cCI6MjA4MTQ1MTUzN30.M8S9zElBiuvVaDWTeiwRN0YeTsDqrlfzNVvCzX8-9sQ';
 
 const _supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-// 2. 权限守门员：检查是否登录
-async function checkAuth() {
-    // 如果当前是登录页，不检查
-    if (window.location.pathname.includes('login.html')) return;
-
-    if (!_supabase) {
-        console.error("Supabase SDK 未加载，请确保 HTML 中已引入 script");
-        return;
-    }
-
-    const { data: { session } } = await _supabase.auth.getSession();
-
-    if (!session) {
-        // 未登录，保存当前位置以便登录后跳转回来（可选），这里直接强制去登录页
-        window.location.href = 'login.html';
-    } else {
-        console.log("✅ 用户已登录:", session.user.email);
-    }
-}
-
-// 立即执行权限检查
-checkAuth();
-
-// ==========================================
-// 原有业务逻辑保持不变
-// ==========================================
+// 你的唯一用户ID (用于只允许你一人访问)
+const ALLOWED_UID = '3547ffb9-5dc0-4f08-af3c-1c79f9a3abea'; 
 
 // 全局状态与配置
 const state = {}; 
@@ -43,6 +20,86 @@ let aiConfig = {
     base: localStorage.getItem('sd_ai_base') || 'https://api.siliconflow.cn/v1',
     model: localStorage.getItem('sd_ai_model') || 'Qwen/Qwen2.5-7B-Instruct'
 };
+
+// ==========================================
+// 2. 核心认证和权限检查
+// ==========================================
+async function checkAuth() {
+    // 如果是登录页，不检查
+    if (window.location.pathname.includes('login.html')) return;
+
+    if (!_supabase) {
+        console.error("Supabase SDK 未加载");
+        window.location.href = 'login.html'; 
+        return;
+    }
+
+    const { data: { session }, error } = await _supabase.auth.getSession();
+
+    if (!session || error) {
+        // 未登录或会话错误，跳转到登录页
+        window.location.href = 'login.html';
+    } else {
+        // 关键：强制检查 UID
+        if (session.user.id !== ALLOWED_UID) {
+            console.error("❌ 未授权用户访问，强制登出!");
+            await _supabase.auth.signOut();
+            window.location.href = 'login.html';
+            return;
+        }
+        console.log("✅ 用户已登录:", session.user.email);
+    }
+}
+checkAuth();
+
+
+// ==========================================
+// 3. 全局可调用函数 (解决 ReferenceError: rollAll/copyFinal is not defined)
+// 这些函数必须在全局作用域下才能被 HTML 的 onclick 事件调用
+// ==========================================
+
+// 解决 ReferenceError: rollAll is not defined
+function rollAll() {
+    // 假设 rollSingle 存在于 database.js 或其他全局加载的文件中
+    // 你的原有逻辑：遍历所有状态并滚动
+    for (const k in state) {
+        // ⚠️ 注意：rollSingle 函数必须在你加载的其他 JS 文件中定义
+        if (typeof rollSingle !== 'undefined' && state[k].enabled && !state[k].locked) {
+            rollSingle(k); 
+        } else if (typeof rollSingle === 'undefined') {
+            console.error("rollSingle 函数未找到，请确保 database.js 已正确加载。");
+        }
+    }
+    buildFinalString();
+}
+
+// 解决 ReferenceError: copyFinal is not defined
+function copyFinal() { 
+    const out = document.getElementById('finalOutput'); 
+    if (out) copyToClipboard(out.value); 
+}
+
+// 组合最终提示词字符串
+function buildFinalString() {
+    let finalString = aiTags.trim() ? aiTags.trim() + ",\n" : "";
+    
+    // 假设 state.key.currentValue 已经包含值
+    for (const key in state) {
+        if (state[key].currentValue) {
+            finalString += state[key].currentValue + ",\n";
+        }
+    }
+    
+    // 移除末尾逗号和换行
+    finalString = finalString.replace(/,\s*$/, ""); 
+    
+    const out = document.getElementById('finalOutput');
+    if (out) out.value = finalString;
+}
+
+// ==========================================
+// 4. 其他工具与 AI 逻辑 (保持全局)
+// ==========================================
 
 // 工具函数：显示提示
 function showToast(msg) {
@@ -131,7 +188,7 @@ async function callAI(mode) {
     btn.disabled = true;
 
     try {
-        const sys = "You are a Stable Diffusion prompt generator. Output format: Positive Tags /// Negative Tags. Use '///' separator.";
+        const sys = "You are a Stable Diffusion prompt generator. Output format: Positive Tags /// Negative Tags. Use '///' separator. Output only the tags.";
         const prompt = mode === 'translate' ? `Translate to English tags: ${inputEl.value}` : `Generate scene tags for: ${inputEl.value}`;
         
         let url = aiConfig.base.endsWith('/chat/completions') ? aiConfig.base : aiConfig.base.replace(/\/$/, "") + '/chat/completions';
@@ -157,16 +214,12 @@ async function callAI(mode) {
         if(txt.includes("///")) {
             const p = txt.split("///"); 
             aiTags = p[0].trim();
-            // 如果未来有负面提示词输入框，可以在这里赋值
-            // const neg = document.getElementById('negInput'); if(neg) neg.value = p[1].trim();
         } else {
             aiTags = txt.trim();
         }
         
         showToast("✨ AI 生成完毕 (已暂存)");
-        
-        // 如果是在 generator 页面，可能需要刷新锁定的卡片或者做其他操作
-        // 目前逻辑仅仅是暂存到 aiTags 变量中供后续组合使用
+        buildFinalString(); // 生成完毕后立即刷新最终字符串
         
     } catch (e) {
         alert("AI 请求失败: " + e.message);
@@ -175,3 +228,24 @@ async function callAI(mode) {
         btn.disabled = false;
     }
 }
+
+// 页面初始化逻辑 (如果需要)
+function initGenerator(grid) {
+    // 你的初始化逻辑... 确保 database.js 中的数据能被 state 接收
+    if (typeof database === 'undefined') {
+        grid.innerHTML = "<h3 style='color:red;text-align:center'>❌ 未找到 database.js</h3>";
+        return;
+    }
+    // ...
+}
+
+// 页面加载完成后的操作
+window.onload = function() {
+    const grid = document.getElementById('cardGrid');
+    if (grid) {
+        // 假设 initGenerator 函数存在并执行初始化
+        if (typeof initGenerator !== 'undefined') {
+            initGenerator(grid);
+        }
+    }
+};
