@@ -497,3 +497,82 @@ h1 {
     letter-spacing: 0.5px; /* 稍微增加字母间距，看起来更专业 */
     /* ... */
 }
+
+/* === 顶部导航栏 (共用) - 优化结构 === */
+.app-nav {
+    width: 100%;
+    background: var(--nav-bg);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 40px; /* 增加左右边距 */
+    display: flex;
+    justify-content: space-between; /* 左右分散对齐 */
+    align-items: center; /* 垂直居中 */
+    position: sticky;
+    top: 0;
+    z-index: 200;
+}
+
+/* 导航链接容器（用于居中链接） */
+.nav-links-container {
+    display: flex;
+    gap: 25px; /* 增加链接间距 */
+    /* 在桌面端，我们希望这部分居中 */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    /* 解决移动端或窄屏时的兼容性问题 */
+    max-width: 80%;
+}
+
+/* === 导航链接样式 (Links) === */
+.nav-link {
+    text-decoration: none;
+    color: var(--text-sub);
+    padding: 10px 0; /* 垂直留出空间，水平不留（让底部指示条宽度更精确） */
+    font-weight: 500;
+    transition: 0.2s;
+    background: transparent;
+    position: relative; /* 用于底部指示条 */
+    font-size: 1.05rem; /* 稍微放大 */
+}
+
+.nav-link:hover {
+    color: white;
+}
+
+/* 重点优化：Active 状态 (底部指示条) */
+.nav-link.active {
+    color: var(--accent-color); /* 突出文字颜色 */
+    font-weight: bold;
+}
+
+/* 底部高亮指示条 */
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -10px; /* 定位到链接底部下方 */
+    left: 0;
+    width: 100%; /* 宽度与链接文字对齐 */
+    height: 3px;
+    background: var(--accent-color); 
+    border-radius: 2px;
+}
+
+/* === 登出按钮样式 === */
+.logout-btn {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s;
+    flex-shrink: 0; /* 防止被压缩 */
+}
+
+.logout-btn:hover {
+    background-color: #dc2626;
+}
