@@ -439,3 +439,61 @@ h1 {
         grid-template-columns: repeat(4, 1fr);
     }
 }
+
+/* style.css */
+
+.app-nav {
+    /* ... 保持原有代码 ... */
+    padding: 15px 40px; /* 增加左右内边距，让内容不贴边 */
+    justify-content: space-between; /* 链接和登出按钮分散对齐 */
+    /* ... 保持原有代码 ... */
+}
+
+/* 登出按钮也需要定位，如果您希望它在最右侧 */
+.logout-btn {
+    /* 保持原有样式，但确保它在 Flex 容器中表现良好 */
+    align-self: center; /* 确保按钮垂直居中 */
+    flex-shrink: 0; /* 防止按钮被压缩 */
+}
+
+/* style.nav-link (移除 background 和 border 效果，采用更简洁的 Hover) */
+.nav-link {
+    /* ... 保持原有代码 ... */
+    padding: 8px 20px; 
+    border-radius: 8px;
+    font-weight: 500; /* 可以稍微调细 */
+    position: relative; /* 用于底部高亮条 */
+}
+
+.nav-link:hover {
+    background: rgba(255,255,255,0.1); /* 轻微背景高亮 */
+    color: white;
+}
+
+/* 重点优化：Active 状态使用底部指示条 */
+.nav-link.active {
+    background: transparent; /* 保持背景透明 */
+    color: var(--accent-color); /* 让文字颜色突出 */
+    font-weight: bold;
+    border: none; /* 移除边框 */
+    box-shadow: none;
+}
+
+/* 添加一个平滑过渡的底部指示条 */
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -15px; /* 定位到导航栏底部 */
+    left: 10%;
+    width: 80%; /* 宽度占链接的 80% */
+    height: 3px;
+    background: var(--accent-color); /* 使用主题色 */
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.nav-link {
+    /* ... */
+    letter-spacing: 0.5px; /* 稍微增加字母间距，看起来更专业 */
+    /* ... */
+}
