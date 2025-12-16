@@ -1,15 +1,3 @@
-// database.js - 修正后的 Supabase 初始化
-
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = 'https://mjmpvgyyeqalcocuizwb.supabase.co'
-// ❗ 必须使用 Anon Key，Anon Key 是可以公开的。
-const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE' // 请替换成您 Supabase 后台提供的 anon public 密钥！
-
-const supabase = createClient(supabaseUrl, SUPABASE_ANON_KEY)
-
-// (下方是您现有的 const database = { ... } 数据)
-// ...
 
 const database = {
   "00_char": {

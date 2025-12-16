@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统登录 - Beta Access</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+        .login-card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .login-btn:hover { background: var(--btn-hover); }
+        .error-msg { color: var(--extreme-color); margin-top: 10px; font-size: 0.9rem; display: none;}
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <h2 style="color: var(--accent-color); margin-top: 0;">🔐 内部系统登录</h2>
+            <p style="color: var(--text-sub); margin-bottom: 20px;">请输入授权账号以访问 Beta 版本</p>
+            
+            <input type="email" id="email" class="login-input" placeholder="邮箱地址">
+            <input type="password" id="password" class="login-input" placeholder="密码">
+            
+            <button class="login-btn" onclick="handleLogin()">登录系统</button>
+            <p id="errorMsg" class="error-msg"></p>
+        </div>
+    </div>
+
+    <script>
+        // ✅ 配置已自动填入
+        const SUPABASE_URL = 'https://mjmpvgyyeqalcocuizwb.supabase.co';
+        const SUPABASE_ANON_KEY = 'seyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qbXB2Z3l5ZXFhbGNvY3VpendiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NzU1MzcsImV4cCI6MjA4MTQ1MTUzN30.M8S9zElBiuvVaDWTeiwRN0YeTsDqrlfzNVvCzX8-9sQ';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.querySelector('.login-btn');
+            const errMsg = document.getElementById('errorMsg');
+
+            btn.disabled = true;
+            btn.innerText = "验证中...";
+            errMsg.style.display = 'none';
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            if (error) {
+                errMsg.innerText = "登录失败: " + error.message;
+                errMsg.style.display = 'block';
+                btn.disabled = false;
+                btn.innerText = "登录系统";
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
