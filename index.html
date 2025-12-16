@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 提示词 - 风格预设库</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav class="app-nav">
+        <a href="index.html" class="nav-link active">📚 风格预设库</a>
+        <a href="generator.html" class="nav-link">🎲 随机生成器</a>
+    </nav>
+
+    <div class="page-container">
+        <h1>📑 关键词一键复制</h1>
+        
+        <div class="preset-grid">
+            <div class="preset-card safe" onclick="copyPreset('safe')">
+                <span class="icon">🛡️</span>
+                <span class="label">安全/时尚风格</span>
+            </div>
+
+            <div class="preset-card normal" onclick="copyPreset('normal')">
+                <span class="icon">⚖️</span>
+                <span class="label">标准/通用风格</span>
+            </div>
+
+            <div class="preset-card danger" onclick="copyPreset('danger')">
+                <span class="icon">⚠️</span>
+                <span class="label">进阶/特殊风格</span>
+            </div>
+            
+            <div class="preset-card extreme" onclick="copyPreset('extreme_danger')"> 
+                <span class="icon">💀</span>
+                <span class="label">高风险/重度风格</span>
+            </div>
+        </div>
+
+        <div class="divider">
+            <span>📂 常用指令文档整理</span>
+        </div>
+
+        <div class="preset-grid">
+            
+            <div class="preset-card doc" onclick="openCollection('driver')">
+                <span class="icon">🚌</span>
+                <span class="label">老司机合集</span>
+            </div>
+
+            <div class="preset-card doc" onclick="openCollection('writing')">
+                <span class="icon">✍️</span>
+                <span class="label">写作指令合集</span>
+            </div>
+
+            <div class="preset-card doc" onclick="openCollection('character')">
+                <span class="icon">👤</span>
+                <span class="label">人物设定合集</span>
+            </div>
+            
+            <div class="preset-card doc" onclick="openCollection('clothing')">
+                <span class="icon">👗</span>
+                <span class="label">服装设定合集</span>
+            </div>
+            
+            <div class="preset-card doc" onclick="copyPreset('ai_fix')">
+                <span class="icon">🚑</span>
+                <span class="label">AI抽风矫正</span>
+            </div>
+
+            <div class="preset-card doc" onclick="copyPreset('paper')">
+                <span class="icon">🎓</span>
+                <span class="label">论文提示词</span>
+            </div>
+
+            <div class="preset-card doc" onclick="copyPreset('story_immersive')">
+                <span class="icon">🎭</span>
+                <span class="label">沉浸式剧情</span>
+            </div>
+
+            <div class="preset-card doc" onclick="copyPreset('story_idea')">
+                <span class="icon">💡</span>
+                <span class="label">故事灵感</span>
+            </div>
+
+            <div class="preset-card doc" onclick="copyPreset('art_ref')">
+                <span class="icon">🎨</span>
+                <span class="label">画图参考</span>
+            </div>
+
+            <div class="preset-card doc" onclick="copyPreset('quality')">
+                <span class="icon">💎</span>
+                <span class="label">提升输出质量</span>
+            </div>
+
+            <div class="preset-card doc" onclick="copyPreset('xhs')">
+                <span class="icon">📕</span>
+                <span class="label">小红书文案</span>
+            </div>
+
+            <div class="preset-card doc" onclick="copyPreset('english')">
+                <span class="icon">🔤</span>
+                <span class="label">英语单词</span>
+            </div>
+
+        </div>
+
+        <p class="preset-hint">👆 点击上方卡片即可将对应风格的 Prompt 模板复制到剪贴板</p>
+    </div>
+
+    <div class="modal-overlay" id="collectionModal">
+        <div class="modal collection-modal-content">
+            <div class="modal-header">
+                <h2 id="collectionTitle">📂 合集名称</h2>
+                <button class="close-btn" onclick="closeCollection()">×</button>
+            </div>
+            <p style="color:#94a3b8; margin-bottom:15px; font-size:0.9rem;">点击下方具体项目即可复制</p>
+            
+            <div id="collectionList" class="collection-grid"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">复制成功！</div>
+
+    <script src="database.js"></script>
+
+    <script src="data/init.js"></script>
+
+    <script src="data/styles.js"></script>
+    <script src="data/writing.js"></script>
+    <script src="data/driver.js"></script>
+    <script src="data/docs.js"></script>
+    <script src="data/character.js"></script>
+    
+    <script src="data/clothing.js"></script>
+
+    <script src="script.js"></script>
+</body>
+</html>
