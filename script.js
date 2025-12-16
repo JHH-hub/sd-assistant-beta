@@ -1,5 +1,5 @@
 // ==========================================
-// script.js - 核心逻辑修正版
+// script.js - 核心逻辑修正版 (优化了 Generator 卡片显示)
 // ==========================================
 
 // --- A. 全局配置与状态 ---
@@ -9,14 +9,12 @@ const ALLOWED_UID = '63ac44b9-7dc2-4827-ba39-9669e4f39147';
 const DATA_TABLE_NAME = 'prompts_data'; 
 
 const { createClient } = window.supabase; 
-
-// 现在可以安全地调用 createClient 并赋值给 supabase 变量
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 全局数据存储变量 (由 Supabase 填充)
 window._PRESETS = {};
 window._COLLECTIONS = {};
-window._GENERATOR_DB = {}; // 用于 generator.html
+window._GENERATOR_DB = {}; 
 
 // Generator 页面特有的状态
 const state = {}; 
@@ -29,7 +27,7 @@ let aiConfig = {
 
 
 // ==========================================
-// B. 认证、解锁与数据加载逻辑 (全局函数，解决 ReferenceError)
+// B. 认证、解锁与数据加载逻辑
 // ==========================================
 
 async function checkAuthSession() {
@@ -57,7 +55,6 @@ async function checkAuthSession() {
     }
 }
 
-// 供 HTML 按钮调用 (全局作用域)
 async function handleLogin() {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
@@ -95,10 +92,10 @@ async function handleLogin() {
     }
 }
 
-// 供 HTML 按钮调用 (全局作用域)
 async function handleLogout() {
     try {
         await supabase.auth.signOut();
+        // 清空本地数据，强制重新加载
         window._PRESETS = {};
         window._COLLECTIONS = {};
         window._GENERATOR_DB = {};
@@ -111,18 +108,17 @@ async function handleLogout() {
 
 async function loadProtectedData() {
     try {
-        // RLS 策略将确保只有授权用户能成功查询
         const { data, error } = await supabase
             .from(DATA_TABLE_NAME)
             .select('presets, collections, generator_db') 
-            .single(); // 假设只有一条记录
+            .single(); 
 
         if (error) throw new Error(error.message || "数据查询失败");
         
         if (data) {
             window._PRESETS = data.presets || {};
             window._COLLECTIONS = data.collections || {};
-            window._GENERATOR_DB = data.generator_db || {}; // 填充生成器数据
+            window._GENERATOR_DB = data.generator_db || {}; 
             console.log("数据加载成功。");
         } else {
             showToast("数据加载失败：未找到数据记录。");
@@ -136,7 +132,7 @@ async function loadProtectedData() {
 
 
 // ==========================================
-// C. 通用工具与 UI 交互函数 (全局函数)
+// C. 通用工具与 UI 交互函数
 // ==========================================
 
 function showLockScreen(message) {
@@ -170,6 +166,7 @@ function copyToClipboard(text) {
         showToast("✅ 复制成功！");
     }).catch(err => {
         console.error(err);
+        // Fallback for older browsers
         const ta = document.createElement("textarea");
         ta.value = text;
         document.body.appendChild(ta);
@@ -180,7 +177,6 @@ function copyToClipboard(text) {
     });
 }
 
-// 供 HTML 按钮调用 (全局作用域)
 function copyPreset(type) {
     if (window._PRESETS[type]) {
         copyToClipboard(window._PRESETS[type]);
@@ -189,7 +185,6 @@ function copyPreset(type) {
     }
 }
 
-// 供 HTML 按钮调用 (全局作用域)
 function openCollection(type) {
     const modal = document.getElementById('collectionModal');
     const titleEl = document.getElementById('collectionTitle');
@@ -211,7 +206,8 @@ function openCollection(type) {
         itemEl.innerText = item.label || item.title || item.prompt; 
         itemEl.onclick = () => {
             copyToClipboard(item.prompt);
-            closeCollection(); // 复制后关闭弹窗
+            // 复制后关闭弹窗，增强用户体验
+            closeCollection(); 
         };
         listEl.appendChild(itemEl);
     });
@@ -219,20 +215,18 @@ function openCollection(type) {
     modal.style.display = 'flex';
 }
 
-// 供 HTML 按钮调用 (全局作用域)
 function closeCollection() {
     document.getElementById('collectionModal').style.display = 'none';
 }
 
 
 // ==========================================
-// D. Generator 页面逻辑 (应包含在原文件所有函数)
+// D. Generator 页面逻辑 (优化卡片信息显示)
 // ==========================================
 
 function initGenerator(grid) {
     grid.innerHTML = '';
     
-    // 使用全局数据源 window._GENERATOR_DB
     const database = window._GENERATOR_DB; 
 
     for (const [key, category] of Object.entries(database)) {
@@ -240,7 +234,9 @@ function initGenerator(grid) {
         
         state[key] = {
             enabled: true, locked: false, current: null,
-            data: category.data, color: category.meta.color || '#ccc'
+            data: category.data, 
+            color: category.meta.color || '#ccc',
+            groupName: category.meta.name // 存储分类名称
         };
 
         const card = document.createElement('div');
@@ -257,7 +253,7 @@ function initGenerator(grid) {
                 <div style="font-size:0.8rem; opacity:0.6">${category.data.length}</div>
             </div>
             <div class="card-content">
-                <div class="item-group" id="group-${key}">---</div>
+                <div class="item-group" id="group-${key}">${category.meta.name}</div> 
                 <div class="item-name" id="name-${key}">点击抽取</div>
             </div>
             <div class="prompt-preview" id="prompt-${key}"></div>
@@ -271,6 +267,7 @@ function initGenerator(grid) {
     }
     rollAll();
     
+    // 绑定空格键事件
     document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
         if (e.code === 'Space') { e.preventDefault(); rollAll(); }
@@ -283,6 +280,8 @@ function rollSingle(key) {
     const index = Math.floor(Math.random() * dataArray.length);
     state[key].current = dataArray[index];
     
+    // 优化：确保显示分类名称
+    document.getElementById(`group-${key}`).innerText = state[key].groupName; 
     document.getElementById(`name-${key}`).innerText = state[key].current.label || state[key].current.prompt;
     document.getElementById(`prompt-${key}`).innerText = state[key].current.prompt;
     buildFinalString();
@@ -318,15 +317,21 @@ function toggleAll(enable) {
 }
 
 function toggleLock(key) {
+    // 只有在抽取了内容之后才能锁定
+    if (!state[key].current) {
+        showToast("🔒 请先抽取内容再锁定！");
+        return;
+    }
+    
     state[key].locked = !state[key].locked;
     document.getElementById(`lock-${key}`).innerText = state[key].locked ? '🔒' : '🔓';
-    showToast(state[key].locked ? `🔒 ${state[key].current.label} 已锁定` : `🔓 已解锁`);
+    showToast(state[key].locked ? `🔒 ${state[key].current.label || '当前项目'} 已锁定` : `🔓 已解锁`);
 }
 
 function resetLocks() {
     Object.keys(state).forEach(key => {
         if (state[key].locked) {
-            toggleLock(key);
+            toggleLock(key); // 调用 toggleLock 会自动更新状态和 UI
         }
     });
     showToast("🔓 所有卡片已解锁");
@@ -334,9 +339,22 @@ function resetLocks() {
 
 function clearSingle(key) {
     state[key].current = null;
+    // 如果卡片是关闭状态，不影响锁定按钮
+    if (state[key].enabled) {
+        state[key].locked = false;
+        document.getElementById(`lock-${key}`).innerText = '🔓';
+    }
+
     document.getElementById(`name-${key}`).innerText = "点击抽取";
     document.getElementById(`prompt-${key}`).innerText = "";
-    document.getElementById(`group-${key}`).innerText = "---";
+    
+    // 优化：清空时显示分类名称
+    if (state[key]) {
+        document.getElementById(`group-${key}`).innerText = state[key].groupName;
+    } else {
+        document.getElementById(`group-${key}`).innerText = "---";
+    }
+
     buildFinalString();
 }
 
@@ -365,6 +383,7 @@ function copyFinal() {
     const neg = document.getElementById('negInput').value.trim();
     
     let result = pos;
+    // 使用 SD 常用的 /// 分隔符
     if (neg) {
         result += ' /// ' + neg;
     }
@@ -408,11 +427,15 @@ async function callAI(mode) {
 
     const btn = document.querySelector(`button[onclick="callAI('${mode}')"]`);
     if (!btn) return;
-    const oldTxt = btn.innerText; btn.innerText = "⏳..."; btn.disabled = true;
+    const oldTxt = btn.innerText; 
+    btn.innerText = "⏳..."; 
+    btn.disabled = true;
 
     try {
-        const sys = "You are a Stable Diffusion prompt generator. Output format: Positive Tags /// Negative Tags. Use '///' separator.";
-        const prompt = mode === 'translate' ? `Translate to English tags, focusing on quality and artistic style: ${inputEl.value}` : `Generate artistic and detailed Stable Diffusion scene tags for: ${inputEl.value}`;
+        const sys = "You are a Stable Diffusion prompt generator. Output format: Positive Tags /// Negative Tags. Use '///' separator, and ensure all tags are in English, separated by commas.";
+        const prompt = mode === 'translate' 
+            ? `Translate the following text into English tags, ensuring they are high quality and suitable for SD/Midjourney: ${inputEl.value}` 
+            : `Generate artistic and detailed Stable Diffusion positive and negative tags (in English) for the scene: ${inputEl.value}`;
         
         let url = aiConfig.base.endsWith('/chat/completions') ? aiConfig.base : aiConfig.base.replace(/\/$/, "") + '/chat/completions';
         
@@ -438,17 +461,15 @@ async function callAI(mode) {
         }
         
         // 更新 Prompt 输入框
-        const posInput = document.getElementById('loraInput');
-        posInput.value = posTags;
+        document.getElementById('loraInput').value = posTags;
         
         // 更新负面 Prompt
         const negInput = document.getElementById('negInput'); 
         if(negInput) negInput.value = negTags;
         
-        aiTags = posTags;
-        
         // 自动更新最终字符串
         buildFinalString(); 
+        showToast(mode === 'translate' ? "🪄 翻译完成！" : "🧠 联想完成！");
 
     } catch (e) {
         showToast("❌ AI 调用失败: " + (e.message || "请检查配置和网络"));
@@ -468,17 +489,19 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuthSession();
     
     // 绑定弹窗关闭事件，防止点击背景无法关闭
-    const collectionModal = document.getElementById('collectionModal');
-    if(collectionModal) {
-        collectionModal.addEventListener('click', function(e) {
-            if (e.target === this) closeCollection();
-        });
-    }
-
-    const settingsModal = document.getElementById('settingsModal');
-    if(settingsModal) {
-        settingsModal.addEventListener('click', function(e) {
-            if (e.target === this) closeSettings();
-        });
-    }
+    const modals = [
+        document.getElementById('collectionModal'),
+        document.getElementById('settingsModal')
+    ];
+    
+    modals.forEach(modal => {
+        if(modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    if (this.id === 'collectionModal') closeCollection();
+                    if (this.id === 'settingsModal') closeSettings();
+                }
+            });
+        }
+    });
 });
