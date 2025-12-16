@@ -139,17 +139,23 @@ function renderCard(key, data) {
 // ==========================================
 // 4. 全局可调用函数 (HTML onclick 依赖)
 // ==========================================
-
 function rollAll() {
+    // 确保 rollSingle 已经被加载
+    if (typeof window.rollSingle !== 'function') {
+        console.error("❌ rollSingle 函数未定义，无法执行滚动。");
+        return;
+    }
+
     for (const k in state) {
         // 只有未锁定的和启用的才滚动
         if (state[k] && state[k].enabled && !state[k].locked) {
-            rollSingle(k);
+            // 调用全局的 rollSingle 函数
+            window.rollSingle(k);
         }
     }
+    // buildFinalString 应该在 script.js 中
     buildFinalString();
 }
-
 function copyFinal() { 
     const out = document.getElementById('finalOutput'); 
     if (out) copyToClipboard(out.value); 
@@ -234,7 +240,11 @@ window.onload = function() {
 
     const grid = document.getElementById('cardGrid');
     if (grid) {
-        // 调用我们刚才定义的初始化函数
-        initGenerator(grid);
+        // 直接调用全局函数，相信它已经在 database.js 中定义
+        if (typeof window.initGenerator === 'function') {
+            window.initGenerator(grid);
+        } else {
+            console.error("❌ 严重错误: window.initGenerator 函数未找到。请检查 database.js 是否已加载。");
+        }
     }
 };
