@@ -8,7 +8,10 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const ALLOWED_UID = '63ac44b9-7dc2-4827-ba39-9669e4f39147';
 const DATA_TABLE_NAME = 'prompts_data'; 
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const { createClient } = window.supabase; 
+
+// 现在可以安全地调用 createClient 并赋值给 supabase 变量
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 全局数据存储变量 (由 Supabase 填充)
 window._PRESETS = {};
