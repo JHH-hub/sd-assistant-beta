@@ -4,16 +4,17 @@
     --card-bg: #1e293b;
     --text-main: #f1f5f9;
     --text-sub: #94a3b8;
-    --accent-color: #6366f1;
+    --accent-color: #6366f1; /* 主题强调色 (蓝色/紫色) */
     --btn-hover: #4f46e5;
     --border-color: #334155;
     --nav-bg: rgba(30, 41, 59, 0.95);
     
     /* 预设卡片颜色 */
-    --safe-color: #10b981;
-    --normal-color: #3b82f6;
-    --danger-color: #f59e0b;
-    --extreme-color: #ef4444;
+    --safe-color: #10b981;    /* 绿色 */
+    --normal-color: #3b82f6;  /* 蓝色 */
+    --danger-color: #f59e0b;  /* 黄色 */
+    --extreme-color: #ef4444; /* 红色 */
+    --doc-color: #0ea5e9;     /* 文档天蓝色 */
 }
 
 body {
@@ -28,49 +29,89 @@ body {
     min-height: 100vh;
 }
 
-/* === 顶部导航栏 (共用) === */
+/* =========================================
+   1. 顶部导航栏 (App-Nav) - 结构与样式优化
+   ========================================= */
 .app-nav {
     width: 100%;
     background: var(--nav-bg);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border-color);
-    padding: 15px 20px;
+    padding: 10px 40px; /* 增加左右内边距 */
     display: flex;
-    justify-content: center; /* 居中对齐 */
-    gap: 20px;
+    justify-content: space-between; /* 左右分散对齐 */
+    align-items: center; /* 垂直居中 */
     position: sticky;
     top: 0;
     z-index: 200;
 }
 
+/* 导航链接容器（用于居中链接） */
+.nav-links-container {
+    display: flex;
+    gap: 25px; 
+    /* 在桌面端居中链接 */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 80%;
+}
+
 .nav-link {
     text-decoration: none;
     color: var(--text-sub);
-    padding: 8px 20px;
-    border-radius: 8px;
-    font-weight: bold;
+    padding: 10px 0; /* 垂直留出空间 */
+    font-weight: 500;
     transition: 0.2s;
     background: transparent;
-    border: 1px solid transparent;
+    position: relative; 
+    font-size: 1.05rem; 
+    letter-spacing: 0.5px;
 }
 
 .nav-link:hover {
-    background: rgba(255,255,255,0.05);
     color: white;
 }
 
+/* 重点优化：Active 状态 (底部指示条) */
 .nav-link.active {
-    background: var(--border-color);
+    color: var(--accent-color); 
+    font-weight: bold;
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -10px; /* 定位到链接底部下方 */
+    left: 0;
+    width: 100%; /* 宽度与链接文字对齐 */
+    height: 3px;
+    background: var(--accent-color); 
+    border-radius: 2px;
+}
+
+/* 登出按钮样式 */
+.logout-btn {
+    background-color: #ef4444;
     color: white;
-    border-color: #475569;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s;
+    flex-shrink: 0; /* 防止被压缩 */
+}
+
+.logout-btn:hover {
+    background-color: #dc2626;
 }
 
 /* === 页面容器 === */
 .page-container {
     width: 100%;
     max-width: 1200px;
-    padding: 40px 20px 180px 20px; /* 底部留空给固定栏 */
+    padding: 40px 20px 180px 20px; 
     box-sizing: border-box;
 }
 
@@ -84,7 +125,7 @@ h1 {
 }
 
 /* =========================================
-   A. 预设库页面样式 (Presets)
+   2. 预设库页面样式 (Presets)
    ========================================= */
 .preset-grid {
     display: grid;
@@ -101,13 +142,17 @@ h1 {
     text-align: center;
     color: white;
     font-weight: bold;
-    transition: transform 0.2s, filter 0.2s;
+    transition: transform 0.2s, filter 0.2s, box-shadow 0.2s;
     border: 1px solid var(--border-color);
     position: relative;
     overflow: hidden;
 }
 
-.preset-card:hover { transform: translateY(-5px); filter: brightness(1.1); }
+.preset-card:hover { 
+    transform: translateY(-5px); 
+    filter: brightness(1.1); 
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
 .preset-card:active { transform: scale(0.98); }
 
 .preset-card .icon { font-size: 3rem; margin-bottom: 15px; display: block; }
@@ -119,12 +164,42 @@ h1 {
 .preset-card.danger { border-bottom: 4px solid var(--danger-color); }
 .preset-card.extreme { border-bottom: 4px solid var(--extreme-color); }
 
+/* 文档类卡片颜色优化 */
+.preset-card.doc {
+    border-bottom: 4px solid var(--doc-color); 
+    background: linear-gradient(to bottom, var(--card-bg), rgba(14, 165, 233, 0.05));
+}
+
+.preset-card.doc:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 5px 15px rgba(14, 165, 233, 0.2);
+}
+
 .preset-hint {
     text-align: center; color: var(--text-sub); margin-top: 30px; font-size: 0.9rem;
 }
 
+/* === 分割线样式 === */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 50px 0 30px 0;
+}
+.divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px dashed var(--border-color);
+}
+.divider span {
+    padding: 0 15px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #60a5fa; /* 浅蓝色文字 */
+}
+
 /* =========================================
-   B. 生成器页面样式 (Generator)
+   3. 生成器页面样式 (Generator)
    ========================================= */
 .controls-header {
     display: flex;
@@ -182,69 +257,39 @@ h1 {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: rgba(15, 23, 42, 0.98);
     border-top: 1px solid var(--border-color);
-    padding: 15px 20px;
+    padding: 15px 40px; /* 增加左右内边距 */
     z-index: 100;
     display: flex; flex-direction: column; align-items: center; gap: 10px;
 }
 
 .bar-row { width: 100%; max-width: 1000px; display: flex; gap: 10px; }
 .bar-input { flex: 1; background: #1e293b; border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: 6px; }
-.bar-btn { background: var(--accent-color); color: white; border: none; padding: 0 20px; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+.bar-btn { background: var(--accent-color); color: white; border: none; padding: 0 20px; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap; transition: background-color 0.2s; }
 .bar-btn:hover { filter: brightness(1.1); }
 .final-text { flex: 1; height: 50px; background: #020617; border: 1px solid var(--border-color); color: #e2e8f0; border-radius: 6px; padding: 8px; resize: none; font-family: monospace; }
 
-/* 通用提示与加载 */
+/* =========================================
+   4. 通用与模态框样式
+   ========================================= */
 .toast {
-    position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+    position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
     background: #10b981; color: white; padding: 8px 16px; border-radius: 20px;
-    opacity: 0; pointer-events: none; transition: 0.3s; z-index: 999;
+    opacity: 0; pointer-events: none; transition: top 0.3s, opacity 0.3s; z-index: 999;
 }
-.toast.show { opacity: 1; top: 100px; }
+.toast.show { opacity: 1; top: 80px; }
 
 /* 设置弹窗 */
 .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center; }
-.modal { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid var(--border-color); }
-.modal input { width: 100%; padding: 8px; margin: 5px 0 15px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 4px; box-sizing: border-box; }
+.modal { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid var(--border-color); box-shadow: 0 5px 30px rgba(0,0,0,0.5); }
+.modal input { width: 100%; padding: 10px; margin: 5px 0 15px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 4px; box-sizing: border-box; }
 
-
-/* === 新增样式：分割线 === */
-.divider {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    margin: 50px 0 30px 0;
-    color: var(--text-sub);
-}
-.divider::before, .divider::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px dashed var(--border-color);
-}
-.divider span {
-    padding: 0 15px;
-    font-weight: bold;
-    font-size: 1.1rem;
-    color: #60a5fa; /* 浅蓝色文字 */
-}
-
-/* === 新增样式：文档类卡片颜色 === */
-/* 给 class="preset-card doc" 的卡片设置统一的蓝色底部条 */
-.preset-card.doc {
-    border-bottom: 4px solid #0ea5e9; /* 天蓝色 */
-    background: linear-gradient(to bottom, var(--card-bg), rgba(14, 165, 233, 0.05));
-}
-
-.preset-card.doc:hover {
-    border-color: #38bdf8;
-    box-shadow: 0 5px 15px rgba(14, 165, 233, 0.2);
-}
 
 /* === 集合弹窗样式 === */
 .collection-modal-content {
     width: 95%;
-    max-width: 600px; /* 比设置弹窗宽一点 */
-    max-height: 80vh; /* 防止太长超出屏幕 */
-    overflow-y: auto; /* 内容多了可以滚动 */
+    max-width: 600px; 
+    max-height: 80vh; 
+    overflow-y: auto; 
     display: flex;
     flex-direction: column;
 }
@@ -277,7 +322,7 @@ h1 {
 /* 二级列表网格 */
 .collection-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); /* 自适应小格子 */
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
     gap: 10px;
 }
 
@@ -305,7 +350,9 @@ h1 {
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
-/* === 锁定屏幕样式 (Lock Screen) === */
+/* =========================================
+   5. 锁定屏幕样式 (Lock Screen)
+   ========================================= */
 .lock-screen {
     position: fixed;
     top: 0;
@@ -375,58 +422,25 @@ h1 {
 }
 
 .error-message {
-    color: #ef4444; /* 红色警告 */
+    color: #ef4444; 
     margin-top: 15px;
     font-size: 0.9rem;
 }
 
-/* 登出按钮样式 */
-.logout-btn {
-    background-color: #ef4444;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    margin-left: 20px;
-    transition: background-color 0.3s;
-}
-
-.logout-btn:hover {
-    background-color: #dc2626;
-}
 
 /* =========================================
-   响应式调整 (Responsive Overrides)
+   6. 响应式调整 (Responsive Overrides)
    ========================================= */
 
 @media screen and (min-width: 768px) {
-    /* 1. 调整导航栏，使其左右分散 (可选) */
-    .app-nav {
-        /* 如果您希望链接左右分散，而不是完全居中，可以取消注释 */
-        /* justify-content: space-between; */
-    }
-
-    /* 2. 调整预设网格，保证至少 4 列 */
+    /* 预设网格：至少 4 列 */
     .preset-grid {
         grid-template-columns: repeat(4, 1fr);
-        /* 或者如果想让卡片更紧凑：
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        */
     }
 
-    /* 3. 调整生成器网格，保证至少 3 列 */
+    /* 生成器网格：至少 3 列 */
     .gen-grid {
         grid-template-columns: repeat(3, 1fr);
-        /* 或者如果想让卡片更宽：
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        */
-    }
-
-    /* 4. 底部固定栏调整：确保输入框有足够的空间 */
-    .fixed-bar {
-        padding: 15px 40px; 
     }
 }
 
@@ -438,141 +452,7 @@ h1 {
     .gen-grid {
         grid-template-columns: repeat(4, 1fr);
     }
-}
-
-/* style.css */
-
-.app-nav {
-    /* ... 保持原有代码 ... */
-    padding: 15px 40px; /* 增加左右内边距，让内容不贴边 */
-    justify-content: space-between; /* 链接和登出按钮分散对齐 */
-    /* ... 保持原有代码 ... */
-}
-
-/* 登出按钮也需要定位，如果您希望它在最右侧 */
-.logout-btn {
-    /* 保持原有样式，但确保它在 Flex 容器中表现良好 */
-    align-self: center; /* 确保按钮垂直居中 */
-    flex-shrink: 0; /* 防止按钮被压缩 */
-}
-
-/* style.nav-link (移除 background 和 border 效果，采用更简洁的 Hover) */
-.nav-link {
-    /* ... 保持原有代码 ... */
-    padding: 8px 20px; 
-    border-radius: 8px;
-    font-weight: 500; /* 可以稍微调细 */
-    position: relative; /* 用于底部高亮条 */
-}
-
-.nav-link:hover {
-    background: rgba(255,255,255,0.1); /* 轻微背景高亮 */
-    color: white;
-}
-
-/* 重点优化：Active 状态使用底部指示条 */
-.nav-link.active {
-    background: transparent; /* 保持背景透明 */
-    color: var(--accent-color); /* 让文字颜色突出 */
-    font-weight: bold;
-    border: none; /* 移除边框 */
-    box-shadow: none;
-}
-
-/* 添加一个平滑过渡的底部指示条 */
-.nav-link.active::after {
-    content: '';
-    position: absolute;
-    bottom: -15px; /* 定位到导航栏底部 */
-    left: 10%;
-    width: 80%; /* 宽度占链接的 80% */
-    height: 3px;
-    background: var(--accent-color); /* 使用主题色 */
-    border-radius: 2px;
-    transition: width 0.3s ease;
-}
-
-.nav-link {
-    /* ... */
-    letter-spacing: 0.5px; /* 稍微增加字母间距，看起来更专业 */
-    /* ... */
-}
-
-/* === 顶部导航栏 (共用) - 优化结构 === */
-.app-nav {
-    width: 100%;
-    background: var(--nav-bg);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--border-color);
-    padding: 10px 40px; /* 增加左右边距 */
-    display: flex;
-    justify-content: space-between; /* 左右分散对齐 */
-    align-items: center; /* 垂直居中 */
-    position: sticky;
-    top: 0;
-    z-index: 200;
-}
-
-/* 导航链接容器（用于居中链接） */
-.nav-links-container {
-    display: flex;
-    gap: 25px; /* 增加链接间距 */
-    /* 在桌面端，我们希望这部分居中 */
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    
-    /* 解决移动端或窄屏时的兼容性问题 */
-    max-width: 80%;
-}
-
-/* === 导航链接样式 (Links) === */
-.nav-link {
-    text-decoration: none;
-    color: var(--text-sub);
-    padding: 10px 0; /* 垂直留出空间，水平不留（让底部指示条宽度更精确） */
-    font-weight: 500;
-    transition: 0.2s;
-    background: transparent;
-    position: relative; /* 用于底部指示条 */
-    font-size: 1.05rem; /* 稍微放大 */
-}
-
-.nav-link:hover {
-    color: white;
-}
-
-/* 重点优化：Active 状态 (底部指示条) */
-.nav-link.active {
-    color: var(--accent-color); /* 突出文字颜色 */
-    font-weight: bold;
-}
-
-/* 底部高亮指示条 */
-.nav-link.active::after {
-    content: '';
-    position: absolute;
-    bottom: -10px; /* 定位到链接底部下方 */
-    left: 0;
-    width: 100%; /* 宽度与链接文字对齐 */
-    height: 3px;
-    background: var(--accent-color); 
-    border-radius: 2px;
-}
-
-/* === 登出按钮样式 === */
-.logout-btn {
-    background-color: #ef4444;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.3s;
-    flex-shrink: 0; /* 防止被压缩 */
-}
-
-.logout-btn:hover {
-    background-color: #dc2626;
+    .fixed-bar {
+        padding: 15px 40px; 
+    }
 }
