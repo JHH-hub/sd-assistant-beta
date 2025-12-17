@@ -1,29 +1,34 @@
 // ==========================================
 // 🔒 客户端密码保护：极简实现
 // ==========================================
-const SITE_PASS = "pxlsan"; 
-
 (function() {
-    // 立即检查权限，不需要等待 load 事件，越快越好
+    const SITE_PASS = "pxlsan"; 
+
     function verify() {
         const mainContent = document.getElementById('main-content');
-        
-        // --- 🆕 新增：自动获取 URL 中的密码和 Token ---
-        if (hash.includes('pw=')) {
+        // 🆕 获取 URL 的 hash 部分 (例如 #access_token=xxx&pw=pxlsan)
+        const hash = window.location.hash;
+
+        // --- 🆕 自动验证逻辑 ---
+        if (hash && hash.includes('pw=')) {
+            // 解析 hash 字符串中的参数
             const params = new URLSearchParams(hash.substring(1));
             const urlPw = params.get('pw');
+            
             if (urlPw === SITE_PASS) {
+                // 验证通过，存入 session，下次刷新就不弹窗了
                 sessionStorage.setItem('siteAccess', SITE_PASS);
-                // 注意：这里不要清理 hash，留给 Supabase 的登录逻辑去读取 access_token
             }
         }
-        // --------------------------------------------
+        // -----------------------
 
+        // 检查是否有权访问
         if (sessionStorage.getItem('siteAccess') === SITE_PASS) {
             if (mainContent) mainContent.style.display = 'block';
             return;
         }
 
+        // 如果没通过验证，执行原有的弹窗逻辑
         let attempts = 3;
         while (attempts > 0) {
             const userInput = prompt("🔒 请输入访问密码："); 
@@ -37,7 +42,6 @@ const SITE_PASS = "pxlsan";
             }
         }
 
-        // 失败处理
         document.body.innerHTML = `
             <div style="text-align:center; padding:50px; color:#f1f5f9; background:#0f172a; height:100vh;">
                 <h1>❌ 访问被拒绝</h1>
@@ -46,7 +50,6 @@ const SITE_PASS = "pxlsan";
         `;
     }
 
-    // 确保在 DOM 加载后立即执行显示逻辑
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', verify);
     } else {
