@@ -1,21 +1,22 @@
 // ==========================================
-// 🔒 身份验证与 AES 解密逻辑
+// 🔒 安全加固版：哈希验证 + AES 解密
 // ==========================================
-const SITE_PASS = "pxlsan"; 
+const HASHED_PASS = "8e64c69538f00b6c9071274eacba018b41be370f6e488109175f880590d05fa3";
 
 (function() {
     function showAuthModal() {
         const mainContent = document.getElementById('main-content');
+        const savedPass = sessionStorage.getItem('siteAccess');
         
-        // 1. 检查 Session：如果已登录，直接尝试从密文恢复数据
-        if (sessionStorage.getItem('siteAccess') === SITE_PASS) {
-            if (decryptAndInitialize(SITE_PASS)) {
+        // 1. 检查 Session：如果已存有密码，计算其哈希进行二次验证
+        if (savedPass && CryptoJS.SHA256(savedPass).toString() === HASHED_PASS) {
+            if (decryptAndInitialize(savedPass)) {
                 if (mainContent) mainContent.style.display = 'block';
                 return;
             }
         }
 
-        // 2. 未登录：创建自定义登录界面
+        // 2. 未登录或验证失败：创建自定义登录界面
         const authOverlay = document.createElement('div');
         authOverlay.id = 'authOverlay';
         authOverlay.style = `
@@ -32,7 +33,7 @@ const SITE_PASS = "pxlsan";
                 <input type="password" id="passInput" placeholder="请输入访问密码" 
                     style="width: 100%; padding: 12px; margin: 20px 0; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 8px; text-align: center; outline: none;">
                 <button id="authBtn" style="width: 100%; padding: 12px; background: #6366f1; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">进入系统</button>
-                <p id="authMsg" style="color: #ef4444; font-size: 0.8rem; margin-top: 15px; display: none;">密码错误，无法解锁数据</p>
+                <p id="authMsg" style="color: #ef4444; font-size: 0.8rem; margin-top: 15px; display: none;">验证失败，请重试</p>
             </div>
         `;
 
@@ -41,20 +42,28 @@ const SITE_PASS = "pxlsan";
         const input = authOverlay.querySelector('#passInput');
         const btn = authOverlay.querySelector('#authBtn');
 
-        // 绑定点击和回车事件
         btn.onclick = () => handleLogin(input.value);
         input.onkeydown = (e) => { if (e.key === 'Enter') handleLogin(input.value); };
     }
 
-    // 登录处理函数
-    function handleLogin(pass) {
+    // 处理登录逻辑
+    function handleLogin(userInput) {
         const msg = document.getElementById('authMsg');
-        if (decryptAndInitialize(pass)) {
-            sessionStorage.setItem('siteAccess', SITE_PASS);
-            document.getElementById('authOverlay').remove();
-            const mainContent = document.getElementById('main-content');
-            if (mainContent) mainContent.style.display = 'block';
+        // 计算输入的哈希
+        const inputHash = CryptoJS.SHA256(userInput).toString();
+        
+        if (inputHash === HASHED_PASS) {
+            // 哈希一致，尝试解密数据
+            if (decryptAndInitialize(userInput)) {
+                sessionStorage.setItem('siteAccess', userInput); 
+                document.getElementById('authOverlay').remove();
+                document.getElementById('main-content').style.display = 'block';
+            } else {
+                msg.innerText = "数据解密失败，请检查数据库文件";
+                msg.style.display = 'block';
+            }
         } else {
+            msg.innerText = "密码错误，请重试";
             msg.style.display = 'block';
             document.getElementById('passInput').value = '';
         }
@@ -62,36 +71,25 @@ const SITE_PASS = "pxlsan";
 
     // 🔓 核心：解密并挂载数据
     function decryptAndInitialize(pass) {
-    try {
-        if (!window._LOCKED_DATA) return false;
-        
-        const bytes = CryptoJS.AES.decrypt(window._LOCKED_DATA, pass);
-        const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
-        
-        if (!decryptedStr) return false;
+        try {
+            if (!window._LOCKED_DATA) return false;
+            const bytes = CryptoJS.AES.decrypt(window._LOCKED_DATA, pass);
+            const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+            if (!decryptedStr) return false;
 
-        // 1. 挂载数据到全局
-        window.database = JSON.parse(decryptedStr);
-        console.log("🔓 数据解密成功");
-
-        // 2. 如果在【生成器页面】：初始化网格渲染
-        const grid = document.getElementById('cardGrid');
-        if (grid && typeof initGenerator === 'function') {
-            initGenerator(grid);
+            window.database = JSON.parse(decryptedStr);
+            
+            // 初始化 generator 网格渲染
+            const grid = document.getElementById('cardGrid');
+            if (grid && typeof initGenerator === 'function') {
+                initGenerator(grid);
+            }
+            return true;
+        } catch (e) {
+            return false;
         }
-
-        // 3. 如果在【首页 (index.html)】：手动调用渲染函数
-        // 注意：如果你首页的卡片是静态的，解密后只需确保 main-content 显示即可
-        // 如果首页也有动态生成的逻辑，请在这里调用对应的初始化函数
-        
-        return true;
-    } catch (e) {
-        console.error("解密出错，请检查密码或数据格式:", e);
-        return false;
     }
-}
 
-    // 启动检查
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', showAuthModal);
     } else {
