@@ -1,53 +1,56 @@
 // ==========================================
-// 🔒 客户端密码保护：极简实现
+// 🔒 升级版：自定义 UI 登录验证
 // ==========================================
-(function() {
-    const SITE_PASS = "pxlsan"; 
+const SITE_PASS = "pxlsan"; 
 
+(function() {
     function verify() {
         const mainContent = document.getElementById('main-content');
-        // 🆕 获取 URL 的 hash 部分 (例如 #access_token=xxx&pw=pxlsan)
-        const hash = window.location.hash;
-
-        // --- 🆕 自动验证逻辑 ---
-        if (hash && hash.includes('pw=')) {
-            // 解析 hash 字符串中的参数
-            const params = new URLSearchParams(hash.substring(1));
-            const urlPw = params.get('pw');
-            
-            if (urlPw === SITE_PASS) {
-                // 验证通过，存入 session，下次刷新就不弹窗了
-                sessionStorage.setItem('siteAccess', SITE_PASS);
-            }
-        }
-        // -----------------------
-
-        // 检查是否有权访问
         if (sessionStorage.getItem('siteAccess') === SITE_PASS) {
             if (mainContent) mainContent.style.display = 'block';
             return;
         }
 
-        // 如果没通过验证，执行原有的弹窗逻辑
-        let attempts = 3;
-        while (attempts > 0) {
-            const userInput = prompt("🔒 请输入访问密码："); 
-            if (userInput === SITE_PASS) {
+        // 创建自定义登录界面
+        const authOverlay = document.createElement('div');
+        authOverlay.style = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(12px);
+            z-index: 10000; display: flex; justify-content: center; align-items: center;
+        `;
+        
+        authOverlay.innerHTML = `
+            <div style="background: #1e293b; padding: 40px; border-radius: 20px; border: 1px solid #334155; text-align: center; width: 320px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+                <div style="font-size: 3rem; margin-bottom: 20px;">🔒</div>
+                <h2 style="color: white; margin-bottom: 10px;">身份验证</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem;">此工具仅限内部使用</p>
+                <input type="password" id="passInput" placeholder="请输入访问密码" 
+                    style="width: 100%; padding: 12px; margin: 20px 0; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 8px; text-align: center; outline: none;">
+                <button id="authBtn" style="width: 100%; padding: 12px; background: #6366f1; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">进入系统</button>
+                <p id="authMsg" style="color: #ef4444; font-size: 0.8rem; margin-top: 15px; display: none;">密码错误，请重试</p>
+            </div>
+        `;
+
+        document.body.appendChild(authOverlay);
+
+        const input = authOverlay.querySelector('#passInput');
+        const btn = authOverlay.querySelector('#authBtn');
+        const msg = authOverlay.querySelector('#authMsg');
+
+        function doAuth() {
+            if (input.value === SITE_PASS) {
                 sessionStorage.setItem('siteAccess', SITE_PASS);
+                authOverlay.remove();
                 if (mainContent) mainContent.style.display = 'block';
-                return;
             } else {
-                attempts--;
-                if (attempts > 0) alert(`密码错误。您还有 ${attempts} 次机会。`);
+                msg.style.display = 'block';
+                input.value = '';
+                input.focus();
             }
         }
 
-        document.body.innerHTML = `
-            <div style="text-align:center; padding:50px; color:#f1f5f9; background:#0f172a; height:100vh;">
-                <h1>❌ 访问被拒绝</h1>
-                <p>密码错误或尝试次数过多，请刷新页面重试。</p>
-            </div>
-        `;
+        btn.onclick = doAuth;
+        input.onkeydown = (e) => { if (e.key === 'Enter') doAuth(); };
     }
 
     if (document.readyState === 'loading') {
@@ -318,3 +321,4 @@ async function callAI(mode) {
         buildFinalString(); showToast("✨ 成功!");
     } catch(e) { alert("错误: " + e.message); } finally { btn.innerText = oldTxt; btn.disabled = false; }
 }
+
