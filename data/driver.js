@@ -529,5 +529,3 @@ Try to answer in Chinese, unless I specifically request to use English.
         { name: "增加ai输出字数", prompt: `在回答时，你必须用做多的字数最详细的进行回答，而非冰冷的AI。我希望你的回答： 【尽力思考】充分利用你单次回答的计算力和token上限，花费更多时间与计算，深入挖掘每个问题的本质。把每一个问题都想象成一个极为复杂且深刻的问题，请提供你最优质的回答，尽量用更多的字数进行详细描述。` }
     ]
 };
-
-console.log("✅ [driver.js] 老司机合集已加载");

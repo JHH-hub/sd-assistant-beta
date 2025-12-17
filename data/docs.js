@@ -660,5 +660,3 @@ Initialization :
 
 
 });
-
-console.log("✅ [docs.js] 单项文档预设已加载");

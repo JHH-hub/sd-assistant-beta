@@ -721,5 +721,3 @@ Suggestions:
 作为［Role］，在［Background］下，回顾你的［Skills］，严格遵守［Constraints］，按照［Workflow］执行流程。` }
     ]
 };
-
-console.log("✅ [writing.js] 写作合集已加载");
