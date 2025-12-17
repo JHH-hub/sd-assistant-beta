@@ -1,5 +1,51 @@
 // ==========================================
-// script.js - 纯净逻辑版
+// 🔒 客户端密码保护：极简实现
+// ==========================================
+const SITE_PASS = "pxlsan"; 
+
+(function() {
+    // 立即检查权限，不需要等待 load 事件，越快越好
+    function verify() {
+        const mainContent = document.getElementById('main-content');
+        
+        // 如果已经验证过，直接显示
+        if (sessionStorage.getItem('siteAccess') === SITE_PASS) {
+            if (mainContent) mainContent.style.display = 'block';
+            return;
+        }
+
+        let attempts = 3;
+        while (attempts > 0) {
+            const userInput = prompt("🔒 请输入访问密码："); 
+            if (userInput === SITE_PASS) {
+                sessionStorage.setItem('siteAccess', SITE_PASS);
+                if (mainContent) mainContent.style.display = 'block';
+                return;
+            } else {
+                attempts--;
+                if (attempts > 0) alert(`密码错误。您还有 ${attempts} 次机会。`);
+            }
+        }
+
+        // 失败处理
+        document.body.innerHTML = `
+            <div style="text-align:center; padding:50px; color:#f1f5f9; background:#0f172a; height:100vh;">
+                <h1>❌ 访问被拒绝</h1>
+                <p>密码错误或尝试次数过多，请刷新页面重试。</p>
+            </div>
+        `;
+    }
+
+    // 确保在 DOM 加载后立即执行显示逻辑
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', verify);
+    } else {
+        verify();
+    }
+})();
+
+// ==========================================
+// script.js 
 // ==========================================
 
 // 全局状态与配置
@@ -43,54 +89,7 @@ function copyToClipboard(text) {
 }
 
 
-// ==========================================
-// 🔒 客户端密码保护：极简实现（请替换密码）
-// ==========================================
-const SITE_PASS = "pxlsan"; // <--- 🚨 请在这里设置您的密码！
 
-function checkAccess() {
-    const mainContent = document.getElementById('main-content');
-    if (!mainContent) return; // 如果没有找到容器，就跳过
-
-    // 检查会话存储中是否有已验证的标记
-    if (sessionStorage.getItem('siteAccess') === SITE_PASS) {
-        mainContent.style.display = 'block'; // 密码正确，显示内容
-        return;
-    }
-
-    // 弹出密码输入框
-    let attempts = 3;
-    let isAuthenticated = false;
-
-    while (attempts > 0) {
-        // 使用 prompt 弹出密码输入框
-        const userInput = prompt("请输入访问密码："); 
-
-        if (userInput === SITE_PASS) {
-            sessionStorage.setItem('siteAccess', SITE_PASS); // 记住密码（会话期有效）
-            isAuthenticated = true;
-            break;
-        } else {
-            attempts--;
-            alert(`密码错误。您还有 ${attempts} 次机会。`);
-        }
-    }
-
-    if (isAuthenticated) {
-        mainContent.style.display = 'block';
-    } else {
-        // 访问失败，显示拒绝信息
-        document.body.innerHTML = `
-            <div style="text-align:center; padding:50px; color:#f1f5f9; background:#0f172a;">
-                <h1>❌ 访问被拒绝</h1>
-                <p>您输入的密码不正确或尝试次数过多。</p>
-            </div>
-        `;
-    }
-}
-
-// 页面加载完成后调用访问检查
-window.addEventListener('load', checkAccess);
 
 
 // ==========================================
