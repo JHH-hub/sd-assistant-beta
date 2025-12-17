@@ -1,4 +1,13 @@
 // ==========================================
+// 🤐 生产环境日志静默
+// ==========================================
+if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    console.log = function() {};
+    console.info = function() {};
+    // 仅保留 console.error 用于调试严重错误
+}
+
+// ==========================================
 // 🔒 安全加固版
 // ==========================================
 const HASHED_PASS = "8e64c69538f00b6c9071274eacba018b41be370f6e488109175f880590d05fa3";
@@ -68,7 +77,7 @@ const HASHED_PASS = "8e64c69538f00b6c9071274eacba018b41be370f6e488109175f880590d
             document.getElementById('passInput').value = '';
         }
     }
-
+    
     // 🔓 核心：解密并挂载数据
     function decryptAndInitialize(pass) {
         try {
