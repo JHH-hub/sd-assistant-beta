@@ -42,6 +42,64 @@ function copyToClipboard(text) {
     });
 }
 
+
+// ==========================================
+// 🔒 客户端密码保护：极简实现（请替换密码）
+// ==========================================
+const SITE_PASS = "pxlsan"; // <--- 🚨 请在这里设置您的密码！
+
+function checkAccess() {
+    const mainContent = document.getElementById('main-content');
+    if (!mainContent) return; // 如果没有找到容器，就跳过
+
+    // 检查会话存储中是否有已验证的标记
+    if (sessionStorage.getItem('siteAccess') === SITE_PASS) {
+        mainContent.style.display = 'block'; // 密码正确，显示内容
+        return;
+    }
+
+    // 弹出密码输入框
+    let attempts = 3;
+    let isAuthenticated = false;
+
+    while (attempts > 0) {
+        // 使用 prompt 弹出密码输入框
+        const userInput = prompt("请输入访问密码："); 
+
+        if (userInput === SITE_PASS) {
+            sessionStorage.setItem('siteAccess', SITE_PASS); // 记住密码（会话期有效）
+            isAuthenticated = true;
+            break;
+        } else {
+            attempts--;
+            alert(`密码错误。您还有 ${attempts} 次机会。`);
+        }
+    }
+
+    if (isAuthenticated) {
+        mainContent.style.display = 'block';
+    } else {
+        // 访问失败，显示拒绝信息
+        document.body.innerHTML = `
+            <div style="text-align:center; padding:50px; color:#f1f5f9; background:#0f172a;">
+                <h1>❌ 访问被拒绝</h1>
+                <p>您输入的密码不正确或尝试次数过多。</p>
+            </div>
+        `;
+    }
+}
+
+// 页面加载完成后调用访问检查
+window.addEventListener('load', checkAccess);
+
+
+// ==========================================
+// script.js - 纯净逻辑版 (原有代码从这里开始)
+// ==========================================
+
+// ... 你的原有代码（如：const state = {};...）保持不变 ...
+
+
 // ==========================================
 // A. 预设库逻辑 (Index Page)
 // ==========================================
