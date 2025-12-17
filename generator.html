@@ -19,7 +19,6 @@
             <button class="ctrl-btn" onclick="toggleAll(false)">全关</button>
             <button class="ctrl-btn" onclick="resetLocks()">重置锁</button>
             <button class="ctrl-btn" style="color: #8b5cf6; border-color: #8b5cf6;" onclick="openSettings()">⚙️ AI设置</button>
-            <button class="ctrl-btn danger" onclick="handleSignOut()">🚪 登出</button>
         </div>
 
         <div id="cardGrid" class="gen-grid"></div>
@@ -62,34 +61,15 @@
         </div>
     </div>
 
+    <script src="database.js"></script>
+
     <script src="data/init.js"></script>
+
     <script src="data/styles.js"></script>
     <script src="data/writing.js"></script>
     <script src="data/driver.js"></script>
     <script src="data/docs.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="database.js"></script>
-    <script src="script.js"></script> 
-    
-    <script>
-        // 专门为登出功能初始化客户端，使用不冲突的变量名
-        const SUPABASE_URL = 'https://mjmpvgyyeqalcocuizwb.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qbXB2Z3l5ZXFhbGNvY3VpendiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NzU1MzcsImV4cCI6MjA4MTQ1MTUzN30.M8S9zElBiuvVaDWTeiwRN0YeTsDqrlfzNVvCzX8-9sQ';
-        const LOGIN_PATH = '/login.html';
 
-        const supabaseSignOutClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        async function handleSignOut() {
-            if (confirm('确定要登出吗？')) {
-                const { error } = await supabaseSignOutClient.auth.signOut();
-                if (error) {
-                    alert('登出失败：' + error.message);
-                } else {
-                    // 登出成功后重定向到登录页
-                    window.location.href = LOGIN_PATH;
-                }
-            }
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>

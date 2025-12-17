@@ -131,8 +131,6 @@ h1 {
     justify-content: flex-end;
     gap: 10px;
     margin-bottom: 20px;
-    /* 增加 flex-wrap 以应对登出按钮 */
-    flex-wrap: wrap; 
 }
 
 .ctrl-btn {
@@ -145,18 +143,6 @@ h1 {
     transition: 0.2s;
 }
 .ctrl-btn:hover { background: var(--border-color); color: white; }
-
-/* 【新增】危险按钮 (用于登出) 样式 */
-.ctrl-btn.danger {
-    color: var(--extreme-color); /* 红色文字 */
-    border-color: var(--extreme-color); /* 红色边框 */
-    background: none;
-}
-.ctrl-btn.danger:hover {
-    background: var(--extreme-color); /* 悬停时红色背景 */
-    color: white; 
-}
-
 
 .gen-grid {
     display: grid;
