@@ -1,5 +1,5 @@
 // ==========================================
-// 🔒 安全加固版：哈希验证 + AES 解密
+// 🔒 安全加固版
 // ==========================================
 const HASHED_PASS = "8e64c69538f00b6c9071274eacba018b41be370f6e488109175f880590d05fa3";
 
@@ -49,11 +49,11 @@ const HASHED_PASS = "8e64c69538f00b6c9071274eacba018b41be370f6e488109175f880590d
     // 处理登录逻辑
     function handleLogin(userInput) {
         const msg = document.getElementById('authMsg');
-        // 计算输入的哈希
+      
         const inputHash = CryptoJS.SHA256(userInput).toString();
         
         if (inputHash === HASHED_PASS) {
-            // 哈希一致，尝试解密数据
+         
             if (decryptAndInitialize(userInput)) {
                 sessionStorage.setItem('siteAccess', userInput); 
                 document.getElementById('authOverlay').remove();
@@ -98,7 +98,7 @@ const HASHED_PASS = "8e64c69538f00b6c9071274eacba018b41be370f6e488109175f880590d
 })();
 
 // ==========================================
-// 🛠️ 工具函数与 AI 配置 (保持不变)
+// 🛠️ 工具函数与 AI 配置 
 // ==========================================
 const state = {}; 
 let aiTags = "";  
@@ -184,7 +184,6 @@ function closeCollection() {
 // ==========================================
 // B. 生成器逻辑 (Generator Page)
 // ==========================================
-// 注意：原本的 window.onload 被移除，改由 decryptAndInitialize 触发
 function initGenerator(grid) {
     grid.innerHTML = '';
     // 检查全局变量是否已解密
@@ -270,5 +269,3 @@ function buildFinalString() {
     if (out) out.value = parts.join(", ");
 }
 function copyFinal() { const out = document.getElementById('finalOutput'); if (out) copyToClipboard(out.value); }
-
-// AI 设置 & 调用保持不变...
