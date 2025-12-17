@@ -1,0 +1,7 @@
+{
+  "name": "sd-assistant-beta",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.40.0" 
+  }
+}

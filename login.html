@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 访问受限内容</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 针对登录页面的额外样式，使其居中显示 */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* 借鉴您现有 modal 的样式作为登录卡片 */
+        .login-card {
+            background-color: var(--card-bg); /* 来自 style.css */
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-card h2 {
+            color: var(--accent-color); /* 来自 style.css */
+            margin-top: 0;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .login-card label {
+            display: block;
+            color: var(--text-sub); /* 来自 style.css */
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            margin-top: 15px;
+        }
+
+        .login-card input[type="email"],
+        .login-card input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color); /* 来自 style.css */
+            background-color: var(--bg-color); /* 来自 style.css */
+            color: var(--text-main); /* 来自 style.css */
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        
+        /* 错误/提示信息样式 */
+        #message {
+            color: #ef4444; /* extreme_danger 颜色 */
+            margin-top: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+            min-height: 1.2em;
+        }
+
+        .auth-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="login-card">
+            <h2>🔐 登录访问</h2>
+            
+            <form id="authForm">
+                <label for="email">邮箱 (Email)</label>
+                <input type="email" id="email" required placeholder="请输入您的邮箱">
+
+                <label for="password">密码 (Password)</label>
+                <input type="password" id="password" required placeholder="请输入您的密码">
+                
+                <p id="message"></p>
+
+                <div class="auth-actions">
+                    <button type="submit" class="ctrl-btn" style="flex: 1; background:#6366f1; color:white; border:none;">
+                        登录
+                    </button>
+                    <button type="button" id="signUpBtn" class="ctrl-btn" style="flex: 1; color:#3b82f6; border-color:#3b82f6; background:none;">
+                        注册
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // ===========================================
+        // 1. Supabase 配置
+        // ===========================================
+        const SUPABASE_URL = 'https://mjmpvgyyeqalcocuizwb.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qbXB2Z3l5ZXFhbGNvY3VpendiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NzU1MzcsImV4cCI6MjA4MTQ1MTUzN30.M8S9zElBiuvVaDWTeiwRN0YeTsDqrlfzNVvCzX8-9sQ';
+        const REDIRECT_TO = '/index.html'; // 成功登录后跳转的主页面
+        
+        // 初始化 Supabase 客户端
+        // 注意：这里没有特殊配置 auth.storage，让客户端使用默认的 localStorage，
+        // 配合 _middleware.js 中的 Cookie 检查即可完成会话管理。
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // 元素引用
+        const authForm = document.getElementById('authForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const messageEl = document.getElementById('message');
+        const signUpBtn = document.getElementById('signUpBtn');
+
+        // ===========================================
+        // 2. 检查会话状态（防止已登录用户重复看到登录页）
+        // ===========================================
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                // 如果用户已经有会话，直接跳转到主页
+                window.location.href = REDIRECT_TO;
+            }
+        }
+        checkSession();
+
+        // ===========================================
+        // 3. 登录处理函数
+        // ===========================================
+        async function handleSignIn(event) {
+            event.preventDefault();
+            messageEl.textContent = '正在登录...';
+            
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if (error) {
+                messageEl.textContent = `登录失败: ${error.message}`;
+            } else {
+                messageEl.textContent = '登录成功，正在跳转...';
+                // 登录成功后跳转到主页
+                window.location.href = REDIRECT_TO;
+            }
+        }
+
+        // ===========================================
+        // 4. 注册处理函数
+        // ===========================================
+        async function handleSignUp() {
+            messageEl.textContent = '正在注册...';
+
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                messageEl.textContent = '请填写邮箱和密码！';
+                return;
+            }
+
+            const { error } = await supabase.auth.signUp({
+                email,
+                password,
+            });
+
+            if (error) {
+                messageEl.textContent = `注册失败: ${error.message}`;
+            } else {
+                messageEl.textContent = '注册成功！请检查您的邮箱进行确认（如果需要）。您现在可以使用该账号登录了。';
+                // 清空密码框
+                passwordInput.value = '';
+            }
+        }
+
+        // ===========================================
+        // 5. 绑定事件
+        // ===========================================
+        authForm.addEventListener('submit', handleSignIn);
+        signUpBtn.addEventListener('click', handleSignUp);
+
+    </script>
+</body>
+</html>
