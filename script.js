@@ -8,7 +8,17 @@ const SITE_PASS = "pxlsan";
     function verify() {
         const mainContent = document.getElementById('main-content');
         
-        // 如果已经验证过，直接显示
+        // --- 🆕 新增：自动获取 URL 中的密码和 Token ---
+        if (hash.includes('pw=')) {
+            const params = new URLSearchParams(hash.substring(1));
+            const urlPw = params.get('pw');
+            if (urlPw === SITE_PASS) {
+                sessionStorage.setItem('siteAccess', SITE_PASS);
+                // 注意：这里不要清理 hash，留给 Supabase 的登录逻辑去读取 access_token
+            }
+        }
+        // --------------------------------------------
+
         if (sessionStorage.getItem('siteAccess') === SITE_PASS) {
             if (mainContent) mainContent.style.display = 'block';
             return;
