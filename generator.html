@@ -5,75 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 提示词 - 随机生成器</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <div class="lock-screen" id="lockScreen">
-        <div class="login-box">
-            <h1>🔒 仅限授权用户访问</h1>
-            <p>请输入您的邮箱和密码进行验证。</p>
-            <input type="email" id="loginEmail" placeholder="邮箱" required>
-            <input type="password" id="loginPassword" placeholder="密码" required>
-            <button onclick="handleLogin()">登录并解锁</button>
-            <p id="authMessage" class="error-message"></p>
+    <nav class="app-nav">
+        <a href="index.html" class="nav-link">📚 风格预设库</a>
+        <a href="generator.html" class="nav-link active">🎲 随机生成器</a>
+    </nav>
+
+    <div class="page-container">
+        <div class="controls-header">
+            <button class="ctrl-btn" onclick="toggleAll(true)">全开</button>
+            <button class="ctrl-btn" onclick="toggleAll(false)">全关</button>
+            <button class="ctrl-btn" onclick="resetLocks()">重置锁</button>
+            <button class="ctrl-btn" style="color: #8b5cf6; border-color: #8b5cf6;" onclick="openSettings()">⚙️ AI设置</button>
+        </div>
+
+        <div id="cardGrid" class="gen-grid"></div>
+    </div>
+
+    <div class="fixed-bar">
+        <div class="bar-row">
+            <input type="text" class="bar-input" id="aiInput" placeholder="✨ AI 联想: 输入中文场景描述 (如: 雨夜的东京街头)...">
+            <button class="bar-btn" style="background:#8b5cf6" onclick="callAI('scene')">🧠 联想</button>
+            <button class="bar-btn" style="background:#4b5563" onclick="callAI('translate')">🪄 翻译</button>
+        </div>
+
+        <div class="bar-row">
+            <input type="text" class="bar-input" id="loraInput" placeholder="LoRA / 起手式 (始终保留)" oninput="buildFinalString()">
+            <input type="text" class="bar-input" id="negInput" placeholder="🚫 负面 Prompt (Negative)" style="border-color:#ef4444; color:#fca5a5; background:#2a1515;">
+        </div>
+
+        <div class="bar-row">
+            <button class="bar-btn" onclick="rollAll()">🎲 ROLL (Space)</button>
+            <textarea id="finalOutput" class="final-text" placeholder="最终生成的 Prompt..."></textarea>
+            <button class="bar-btn" style="background:#10b981" onclick="copyFinal()">📋 复制</button>
         </div>
     </div>
 
-    <div id="appContent" style="display: none;">
-        <nav class="app-nav">
-            <a href="index.html" class="nav-link">📚 风格预设库</a>
-            <a href="generator.html" class="nav-link active">🎲 随机生成器</a>
-            <button class="logout-btn" onclick="handleLogout()">登出</button> 
-        </nav>
-
-        <div class="page-container">
-            <div class="controls-header">
-                <button class="ctrl-btn" onclick="toggleAll(true)">全开</button>
-                <button class="ctrl-btn" onclick="toggleAll(false)">全关</button>
-                <button class="ctrl-btn" onclick="resetLocks()">重置锁</button>
-                <button class="ctrl-btn" style="color: #8b5cf6; border-color: #8b5cf6;" onclick="openSettings()">⚙️ AI设置</button>
-            </div>
-
-            <div id="cardGrid" class="gen-grid"></div>
-        </div>
-
-        <div class="fixed-bar">
-            <div class="bar-row">
-                <input type="text" class="bar-input" id="aiInput" placeholder="✨ AI 联想: 输入中文场景描述 (如: 雨夜的东京街头)...">
-                <button class="bar-btn" style="background:#8b5cf6" onclick="callAI('scene')">🧠 联想</button>
-                <button class="bar-btn" style="background:#4b5563" onclick="callAI('translate')">🪄 翻译</button>
-            </div>
-
-            <div class="bar-row">
-                <input type="text" class="bar-input" id="loraInput" placeholder="LoRA / 起手式 (始终保留)" oninput="buildFinalString()">
-                <input type="text" class="bar-input" id="negInput" placeholder="🚫 负面 Prompt (Negative)" style="border-color:#ef4444; color:#fca5a5; background:#2a1515;">
-            </div>
-
-            <div class="bar-row">
-                <button class="bar-btn" onclick="rollAll()">🎲 ROLL (Space)</button>
-                <textarea id="finalOutput" class="final-text" placeholder="最终生成的 Prompt..."></textarea>
-                <button class="bar-btn" style="background:#10b981" onclick="copyFinal()">📋 复制</button>
+    <div id="toast" class="toast">Copied!</div>
+    
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <h3 style="color:white; margin-top:0">⚙️ AI API 设置</h3>
+            <label style="color:#94a3b8">API Key</label>
+            <input type="password" id="apiKey" placeholder="sk-xxxx">
+            <label style="color:#94a3b8">Base URL</label>
+            <input type="text" id="apiBase" value="https://api.siliconflow.cn/v1">
+            <label style="color:#94a3b8">Model</label>
+            <input type="text" id="apiModel" value="Qwen/Qwen2.5-7B-Instruct">
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="ctrl-btn" onclick="closeSettings()">取消</button>
+                <button class="ctrl-btn" style="background:#8b5cf6; color:white; border:none;" onclick="saveSettings()">保存</button>
             </div>
         </div>
+    </div>
 
-        <div id="toast" class="toast">Copied!</div>
-        
-        <div class="modal-overlay" id="settingsModal">
-            <div class="modal">
-                <h3 style="color:white; margin-top:0">⚙️ AI API 设置</h3>
-                <label style="color:#94a3b8">API Key</label>
-                <input type="password" id="apiKey" placeholder="sk-xxxx">
-                <label style="color:#94a3b8">Base URL</label>
-                <input type="text" id="apiBase" value="https://api.siliconflow.cn/v1">
-                <label style="color:#94a3b8">Model</label>
-                <input type="text" id="apiModel" value="Qwen/Qwen2.5-7B-Instruct">
-                <div style="display:flex; justify-content:flex-end; gap:10px;">
-                    <button class="ctrl-btn" onclick="closeSettings()">取消</button>
-                    <button class="ctrl-btn" style="background:#8b5cf6; color:white; border:none;" onclick="saveSettings()">保存</button>
-                </div>
-            </div>
-        </div>
-    </div> <script src="script.js"></script>
+    <script src="database.js"></script>
+
+    <script src="data/init.js"></script>
+
+    <script src="data/styles.js"></script>
+    <script src="data/writing.js"></script>
+    <script src="data/driver.js"></script>
+    <script src="data/docs.js"></script>
+
+    <script src="script.js"></script>
 </body>
 </html>

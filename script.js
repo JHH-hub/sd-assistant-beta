@@ -1,152 +1,17 @@
 // ==========================================
-// script.js - 核心逻辑修正版 (优化了 Generator 卡片显示)
+// script.js - 纯净逻辑版
 // ==========================================
 
-// --- A. 全局配置与状态 ---
-const SUPABASE_URL = 'https://mjmpvgyyeqalcocuizwb.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qbXB2Z3l5ZXFhbGNvY3VpendiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NzU1MzcsImV4cCI6MjA4MTQ1MTUzN30.M8S9zElBiuvVaDWTeiwRN0YeTsDqrlfzNVvCzX8-9sQ';
-const ALLOWED_UID = '63ac44b9-7dc2-4827-ba39-9669e4f39147';
-const DATA_TABLE_NAME = 'prompts_data'; 
-
-const { createClient } = window.supabase; 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// 全局数据存储变量 (由 Supabase 填充)
-window._PRESETS = {};
-window._COLLECTIONS = {};
-window._GENERATOR_DB = {}; 
-
-// Generator 页面特有的状态
+// 全局状态与配置
 const state = {}; 
-let aiTags = "";
+let aiTags = "";  
 let aiConfig = {
     key: localStorage.getItem('sd_ai_key') || '',
     base: localStorage.getItem('sd_ai_base') || 'https://api.siliconflow.cn/v1',
     model: localStorage.getItem('sd_ai_model') || 'Qwen/Qwen2.5-7B-Instruct'
 };
 
-
-// ==========================================
-// B. 认证、解锁与数据加载逻辑
-// ==========================================
-
-async function checkAuthSession() {
-    try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (error) throw error;
-
-        if (session && session.user.id === ALLOWED_UID) {
-            unlockApp();
-            await loadProtectedData();
-            // 如果是 generator 页面，数据加载后初始化卡片
-            if (document.getElementById('cardGrid')) {
-                initGenerator(document.getElementById('cardGrid'));
-            }
-        } else {
-            showLockScreen('请登录以访问受保护的内容。');
-            if (session) {
-                 await supabase.auth.signOut();
-            }
-        }
-    } catch (e) {
-        console.error("检查会话失败:", e.message);
-        showLockScreen('检查认证状态失败，请重试登录。');
-    }
-}
-
-async function handleLogin() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    const authMessageEl = document.getElementById('authMessage');
-    authMessageEl.innerText = '登录中...';
-
-    if (!email || !password) {
-        authMessageEl.innerText = '邮箱和密码不能为空。';
-        return;
-    }
-
-    try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-        if (error) {
-            authMessageEl.innerText = '登录失败: ' + error.message;
-            return;
-        }
-
-        if (data.user.id === ALLOWED_UID) {
-            authMessageEl.innerText = '✅ 登录成功，正在加载数据...';
-            unlockApp();
-            await loadProtectedData();
-            // 登录后判断是否需要初始化 Generator
-            if (document.getElementById('cardGrid')) {
-                initGenerator(document.getElementById('cardGrid'));
-            }
-        } else {
-            await supabase.auth.signOut();
-            authMessageEl.innerText = '权限不足：该用户无权访问此应用。';
-        }
-
-    } catch (e) {
-        authMessageEl.innerText = '发生未知错误，请检查网络。';
-    }
-}
-
-async function handleLogout() {
-    try {
-        await supabase.auth.signOut();
-        // 清空本地数据，强制重新加载
-        window._PRESETS = {};
-        window._COLLECTIONS = {};
-        window._GENERATOR_DB = {};
-        showLockScreen('已登出。请重新登录。');
-    } catch (e) {
-        showToast("登出失败!");
-    }
-}
-
-
-async function loadProtectedData() {
-    try {
-        const { data, error } = await supabase
-            .from(DATA_TABLE_NAME)
-            .select('presets, collections, generator_db') 
-            .single(); 
-
-        if (error) throw new Error(error.message || "数据查询失败");
-        
-        if (data) {
-            window._PRESETS = data.presets || {};
-            window._COLLECTIONS = data.collections || {};
-            window._GENERATOR_DB = data.generator_db || {}; 
-            console.log("数据加载成功。");
-        } else {
-            showToast("数据加载失败：未找到数据记录。");
-        }
-
-    } catch (e) {
-        showLockScreen('数据加载失败：请检查 Supabase 表和 RLS 配置。');
-        console.error("加载受保护数据失败:", e);
-    }
-}
-
-
-// ==========================================
-// C. 通用工具与 UI 交互函数
-// ==========================================
-
-function showLockScreen(message) {
-    document.getElementById('lockScreen').style.display = 'flex';
-    const appContent = document.getElementById('appContent');
-    if(appContent) appContent.style.display = 'none'; 
-    document.getElementById('authMessage').innerText = message || '';
-}
-
-function unlockApp() {
-    document.getElementById('lockScreen').style.display = 'none';
-    document.getElementById('appContent').style.display = 'block';
-}
-
+// 工具函数：显示提示
 function showToast(msg) {
     let t = document.getElementById('toast');
     if (!t) {
@@ -160,83 +25,115 @@ function showToast(msg) {
     setTimeout(() => t.classList.remove('show'), 2000);
 }
 
+// 工具函数：复制
 function copyToClipboard(text) {
     if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
         showToast("✅ 复制成功！");
     }).catch(err => {
         console.error(err);
-        // Fallback for older browsers
         const ta = document.createElement("textarea");
         ta.value = text;
         document.body.appendChild(ta);
         ta.select();
-        document.execCommand('copy');
+        document.execCommand("copy");
         document.body.removeChild(ta);
-        showToast("✅ 复制成功 (Fallback)！");
+        showToast("✅ 复制成功！");
     });
 }
 
+// ==========================================
+// A. 预设库逻辑 (Index Page)
+// ==========================================
+
+// 复制单项预设 (从 window._PRESETS 读取)
 function copyPreset(type) {
-    if (window._PRESETS[type]) {
-        copyToClipboard(window._PRESETS[type]);
-    } else {
-        showToast("❌ 预设不存在或尚未加载！");
+    // 检查数据是否加载
+    if (typeof window._PRESETS === 'undefined') {
+        showToast("❌ 数据文件未加载！");
+        return;
     }
+    
+    const text = window._PRESETS[type];
+    if (!text || text.length < 2) { 
+        showToast("⚠️ 该指令暂无内容");
+        return;
+    }
+    copyToClipboard(text);
 }
 
+// 打开二级菜单 (从 window._COLLECTIONS 读取)
 function openCollection(type) {
-    const modal = document.getElementById('collectionModal');
-    const titleEl = document.getElementById('collectionTitle');
-    const listEl = document.getElementById('collectionList');
-
-    const collection = window._COLLECTIONS[type];
+    if (typeof window._COLLECTIONS === 'undefined') return;
     
-    if (!collection) {
-        showToast("❌ 合集数据不存在或尚未加载！");
+    const data = window._COLLECTIONS[type];
+    if (!data) {
+        showToast("⚠️ 该合集暂无数据");
         return;
     }
 
-    titleEl.innerText = collection.title || '📂 合集详情';
+    const titleEl = document.getElementById('collectionTitle');
+    const listContainer = document.getElementById('collectionList');
+    const modalEl = document.getElementById('collectionModal');
 
-    listEl.innerHTML = '';
-    collection.items.forEach(item => {
-        const itemEl = document.createElement('div');
-        itemEl.className = 'collection-item';
-        itemEl.innerText = item.label || item.title || item.prompt; 
-        itemEl.onclick = () => {
-            copyToClipboard(item.prompt);
-            // 复制后关闭弹窗，增强用户体验
-            closeCollection(); 
+    if (!titleEl || !listContainer || !modalEl) return;
+
+    titleEl.innerText = data.title;
+    listContainer.innerHTML = ''; 
+
+    data.items.forEach(item => {
+        const btn = document.createElement('div');
+        btn.className = 'collection-item';
+        btn.innerText = item.name;
+        
+        btn.onclick = () => {
+            if(!item.prompt || item.prompt === "...") {
+                showToast("⚠️ 暂无内容");
+            } else {
+                copyToClipboard(item.prompt);
+            }
         };
-        listEl.appendChild(itemEl);
+        listContainer.appendChild(btn);
     });
 
-    modal.style.display = 'flex';
+    modalEl.style.display = 'flex';
 }
 
 function closeCollection() {
-    document.getElementById('collectionModal').style.display = 'none';
+    const modalEl = document.getElementById('collectionModal');
+    if (modalEl) modalEl.style.display = 'none';
 }
 
+// 绑定弹窗关闭事件
+const collectionModal = document.getElementById('collectionModal');
+if(collectionModal) {
+    collectionModal.addEventListener('click', function(e) {
+        if (e.target === this) closeCollection();
+    });
+}
 
 // ==========================================
-// D. Generator 页面逻辑 (优化卡片信息显示)
+// B. 生成器逻辑 (Generator Page)
 // ==========================================
+
+window.onload = function() {
+    // 检查是否为 generator 页面
+    const grid = document.getElementById('cardGrid');
+    if (grid) {
+        if (typeof database === 'undefined') {
+            grid.innerHTML = "<h3 style='color:red;text-align:center'>❌ 未找到 database.js</h3>";
+            return;
+        }
+        initGenerator(grid);
+    }
+};
 
 function initGenerator(grid) {
     grid.innerHTML = '';
-    
-    const database = window._GENERATOR_DB; 
-
     for (const [key, category] of Object.entries(database)) {
-        if (!category.meta || !category.data) continue; 
-        
         state[key] = {
             enabled: true, locked: false, current: null,
-            data: category.data, 
-            color: category.meta.color || '#ccc',
-            groupName: category.meta.name // 存储分类名称
+            data: category.data, color: category.meta.color || '#ccc'
         };
 
         const card = document.createElement('div');
@@ -253,7 +150,7 @@ function initGenerator(grid) {
                 <div style="font-size:0.8rem; opacity:0.6">${category.data.length}</div>
             </div>
             <div class="card-content">
-                <div class="item-group" id="group-${key}">${category.meta.name}</div> 
+                <div class="item-group" id="group-${key}">---</div>
                 <div class="item-name" id="name-${key}">点击抽取</div>
             </div>
             <div class="prompt-preview" id="prompt-${key}"></div>
@@ -267,142 +164,56 @@ function initGenerator(grid) {
     }
     rollAll();
     
-    // 绑定空格键事件
     document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
         if (e.code === 'Space') { e.preventDefault(); rollAll(); }
     });
 }
 
-function rollSingle(key) {
-    if (!state[key] || !state[key].enabled || state[key].locked) return;
-    const dataArray = state[key].data;
-    const index = Math.floor(Math.random() * dataArray.length);
-    state[key].current = dataArray[index];
-    
-    // 优化：确保显示分类名称
-    document.getElementById(`group-${key}`).innerText = state[key].groupName; 
-    document.getElementById(`name-${key}`).innerText = state[key].current.label || state[key].current.prompt;
-    document.getElementById(`prompt-${key}`).innerText = state[key].current.prompt;
+// 简化的交互函数
+function toggleCard(k) { state[k].enabled = !state[k].enabled; updateCardUI(k); buildFinalString(); }
+function toggleLock(k) { state[k].locked = !state[k].locked; updateCardUI(k); }
+function updateCardUI(k) {
+    const card = document.getElementById(`card-${k}`);
+    const lockBtn = document.getElementById(`lock-${k}`);
+    state[k].enabled ? card.classList.add('active') : card.classList.remove('active');
+    lockBtn.innerText = state[k].locked ? '🔒' : '🔓';
+    if(state[k].enabled && !state[k].current) rollSingle(k);
+}
+function rollSingle(k) {
+    if (!state[k].enabled && !state[k].current) return;
+    const item = state[k].data[Math.floor(Math.random() * state[k].data.length)];
+    state[k].current = item;
+    document.getElementById(`group-${k}`).innerText = item.group;
+    document.getElementById(`name-${k}`).innerText = item.name;
+    document.getElementById(`prompt-${k}`).innerText = item.prompt;
     buildFinalString();
 }
-
-function rollAll() {
-    Object.keys(state).forEach(key => rollSingle(key));
-}
-
-function toggleCard(key) {
-    const card = document.getElementById(`card-${key}`);
-    state[key].enabled = !state[key].enabled;
-    card.classList.toggle('active', state[key].enabled);
-    
-    // 如果关闭，清除选择并解锁
-    if (!state[key].enabled) {
-        clearSingle(key);
-        state[key].locked = false;
-        document.getElementById(`lock-${key}`).innerText = '🔓';
-    } else {
-        // 如果开启，重新抽取
-        rollSingle(key); 
-    }
+function clearSingle(k) {
+    state[k].current = null;
+    document.getElementById(`group-${k}`).innerText = "---";
+    document.getElementById(`name-${k}`).innerText = "---";
+    document.getElementById(`prompt-${k}`).innerText = "";
     buildFinalString();
 }
-
-function toggleAll(enable) {
-    Object.keys(state).forEach(key => {
-        if (state[key].enabled !== enable) {
-            toggleCard(key);
-        }
-    });
-}
-
-function toggleLock(key) {
-    // 只有在抽取了内容之后才能锁定
-    if (!state[key].current) {
-        showToast("🔒 请先抽取内容再锁定！");
-        return;
-    }
-    
-    state[key].locked = !state[key].locked;
-    document.getElementById(`lock-${key}`).innerText = state[key].locked ? '🔒' : '🔓';
-    showToast(state[key].locked ? `🔒 ${state[key].current.label || '当前项目'} 已锁定` : `🔓 已解锁`);
-}
-
-function resetLocks() {
-    Object.keys(state).forEach(key => {
-        if (state[key].locked) {
-            toggleLock(key); // 调用 toggleLock 会自动更新状态和 UI
-        }
-    });
-    showToast("🔓 所有卡片已解锁");
-}
-
-function clearSingle(key) {
-    state[key].current = null;
-    // 如果卡片是关闭状态，不影响锁定按钮
-    if (state[key].enabled) {
-        state[key].locked = false;
-        document.getElementById(`lock-${key}`).innerText = '🔓';
-    }
-
-    document.getElementById(`name-${key}`).innerText = "点击抽取";
-    document.getElementById(`prompt-${key}`).innerText = "";
-    
-    // 优化：清空时显示分类名称
-    if (state[key]) {
-        document.getElementById(`group-${key}`).innerText = state[key].groupName;
-    } else {
-        document.getElementById(`group-${key}`).innerText = "---";
-    }
-
-    buildFinalString();
-}
+function toggleAll(v) { for (const k in state) { if (state[k].enabled !== v) toggleCard(k); } }
+function resetLocks() { for (const k in state) { if (state[k].locked) toggleLock(k); } }
+function rollAll() { for (const k in state) { if (state[k].enabled && !state[k].locked) rollSingle(k); } buildFinalString(); }
 
 function buildFinalString() {
     const parts = [];
-    
-    // 1. Lora / 起手式 (始终保留)
-    const lora = document.getElementById('loraInput').value.trim();
-    if (lora) {
-        parts.push(lora);
-    }
-    
-    // 2. 启用的且已抽取的部分
-    Object.keys(state).forEach(key => {
-        if (state[key].enabled && state[key].current && state[key].current.prompt) {
-            parts.push(state[key].current.prompt);
-        }
-    });
-    
-    const finalPrompt = parts.join(', ');
-    document.getElementById('finalOutput').value = finalPrompt;
+    const prefix = document.getElementById('loraInput')?.value.trim();
+    if (prefix) parts.push(prefix);
+    for (const k in state) { if (state[k].enabled && state[k].current) parts.push(state[k].current.prompt); }
+    if (aiTags) parts.push(aiTags);
+    const out = document.getElementById('finalOutput');
+    if (out) out.value = parts.join(", ");
 }
+function copyFinal() { const out = document.getElementById('finalOutput'); if (out) copyToClipboard(out.value); }
 
-function copyFinal() {
-    const pos = document.getElementById('finalOutput').value.trim();
-    const neg = document.getElementById('negInput').value.trim();
-    
-    let result = pos;
-    // 使用 SD 常用的 /// 分隔符
-    if (neg) {
-        result += ' /// ' + neg;
-    }
-    
-    copyToClipboard(result);
-}
-
-// --- AI 设置与调用 ---
-function openSettings() {
-    document.getElementById('apiKey').value = aiConfig.key;
-    document.getElementById('apiBase').value = aiConfig.base;
-    document.getElementById('apiModel').value = aiConfig.model;
-    document.getElementById('settingsModal').style.display = 'flex';
-}
-
-function closeSettings() {
-    document.getElementById('settingsModal').style.display = 'none';
-}
-
+// AI 设置 & 调用 (保持不变)
+function openSettings() { document.getElementById('settingsModal').style.display='flex'; document.getElementById('apiKey').value = aiConfig.key; }
+function closeSettings() { document.getElementById('settingsModal').style.display='none'; }
 function saveSettings() {
     aiConfig.key = document.getElementById('apiKey').value.trim();
     aiConfig.base = document.getElementById('apiBase').value.trim();
@@ -411,97 +222,29 @@ function saveSettings() {
     localStorage.setItem('sd_ai_base', aiConfig.base);
     localStorage.setItem('sd_ai_model', aiConfig.model);
     closeSettings();
-    showToast("配置已保存！");
 }
-
 async function callAI(mode) {
+    if (!aiConfig.key) { alert("请先配置 API Key"); openSettings(); return; }
     const inputEl = document.getElementById('aiInput');
-    if (!aiConfig.key || !aiConfig.base) {
-        showToast("❌ 请先设置 API Key 和 Base URL！");
-        return;
-    }
-    if (!inputEl || !inputEl.value.trim()) {
-        showToast("❌ 请输入需要处理的文本！");
-        return;
-    }
-
-    const btn = document.querySelector(`button[onclick="callAI('${mode}')"]`);
+    const btn = mode === 'scene' ? document.querySelector('button[onclick="callAI(\'scene\')"]') : document.querySelector('button[onclick="callAI(\'translate\')"]');
     if (!btn) return;
-    const oldTxt = btn.innerText; 
-    btn.innerText = "⏳..."; 
-    btn.disabled = true;
-
+    const oldTxt = btn.innerText; btn.innerText = "⏳..."; btn.disabled = true;
     try {
-        const sys = "You are a Stable Diffusion prompt generator. Output format: Positive Tags /// Negative Tags. Use '///' separator, and ensure all tags are in English, separated by commas.";
-        const prompt = mode === 'translate' 
-            ? `Translate the following text into English tags, ensuring they are high quality and suitable for SD/Midjourney: ${inputEl.value}` 
-            : `Generate artistic and detailed Stable Diffusion positive and negative tags (in English) for the scene: ${inputEl.value}`;
-        
+        const sys = "You are a Stable Diffusion prompt generator. Output format: Positive Tags /// Negative Tags. Use '///' separator.";
+        const prompt = mode === 'translate' ? `Translate to English tags: ${inputEl.value}` : `Generate scene tags for: ${inputEl.value}`;
         let url = aiConfig.base.endsWith('/chat/completions') ? aiConfig.base : aiConfig.base.replace(/\/$/, "") + '/chat/completions';
-        
         const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.key}` },
             body: JSON.stringify({ model: aiConfig.model, messages: [{role:"system",content:sys},{role:"user",content:prompt}], temperature: 0.7 })
         });
-        
         const d = await res.json();
-        if(d.error) throw new Error(d.error.message || JSON.stringify(d));
-        
+        if(d.error) throw new Error(d.error.message);
         const txt = d.choices[0].message.content;
-        
-        let posTags = txt.trim();
-        let negTags = "";
-        
-        // 解析 Positive /// Negative 格式
         if(txt.includes("///")) {
-            const p = txt.split("///").map(s => s.trim());
-            posTags = p[0];
-            negTags = p[1] || "";
-        }
-        
-        // 更新 Prompt 输入框
-        document.getElementById('loraInput').value = posTags;
-        
-        // 更新负面 Prompt
-        const negInput = document.getElementById('negInput'); 
-        if(negInput) negInput.value = negTags;
-        
-        // 自动更新最终字符串
-        buildFinalString(); 
-        showToast(mode === 'translate' ? "🪄 翻译完成！" : "🧠 联想完成！");
-
-    } catch (e) {
-        showToast("❌ AI 调用失败: " + (e.message || "请检查配置和网络"));
-        console.error("AI Call Error:", e);
-    } finally {
-        btn.innerText = oldTxt;
-        btn.disabled = false;
-    }
+            const p = txt.split("///"); aiTags = p[0].trim();
+            const neg = document.getElementById('negInput'); if(neg) neg.value = p[1].trim();
+        } else aiTags = txt.trim();
+        buildFinalString(); showToast("✨ 成功!");
+    } catch(e) { alert("错误: " + e.message); } finally { btn.innerText = oldTxt; btn.disabled = false; }
 }
-
-
-// ==========================================
-// E. 页面加载入口点
-// ==========================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuthSession();
-    
-    // 绑定弹窗关闭事件，防止点击背景无法关闭
-    const modals = [
-        document.getElementById('collectionModal'),
-        document.getElementById('settingsModal')
-    ];
-    
-    modals.forEach(modal => {
-        if(modal) {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    if (this.id === 'collectionModal') closeCollection();
-                    if (this.id === 'settingsModal') closeSettings();
-                }
-            });
-        }
-    });
-});
