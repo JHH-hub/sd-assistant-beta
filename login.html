@@ -106,10 +106,8 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qbXB2Z3l5ZXFhbGNvY3VpendiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NzU1MzcsImV4cCI6MjA4MTQ1MTUzN30.M8S9zElBiuvVaDWTeiwRN0YeTsDqrlfzNVvCzX8-9sQ';
         const REDIRECT_TO = '/index.html'; // 成功登录后跳转的主页面
         
-        // 初始化 Supabase 客户端
-        // 注意：这里没有特殊配置 auth.storage，让客户端使用默认的 localStorage，
-        // 配合 _middleware.js 中的 Cookie 检查即可完成会话管理。
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // 修正：直接调用全局的 createClient，并用新变量名存储结果，避免与全局 Supabase 变量冲突
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         // 元素引用
         const authForm = document.getElementById('authForm');
@@ -122,7 +120,8 @@
         // 2. 检查会话状态（防止已登录用户重复看到登录页）
         // ===========================================
         async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
+            // 使用修正后的客户端变量
+            const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 // 如果用户已经有会话，直接跳转到主页
                 window.location.href = REDIRECT_TO;
@@ -140,7 +139,8 @@
             const email = emailInput.value;
             const password = passwordInput.value;
 
-            const { error } = await supabase.auth.signInWithPassword({
+            // 使用修正后的客户端变量
+            const { error } = await supabaseClient.auth.signInWithPassword({
                 email,
                 password,
             });
@@ -168,7 +168,8 @@
                 return;
             }
 
-            const { error } = await supabase.auth.signUp({
+            // 使用修正后的客户端变量
+            const { error } = await supabaseClient.auth.signUp({
                 email,
                 password,
             });
