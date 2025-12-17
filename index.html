@@ -148,7 +148,7 @@
         const LOGIN_PATH = '/login.html';
 
         // 初始化 Supabase 客户端用于登出，使用唯一变量名避免冲突
-        const supabaseAuthClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseAuthClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // 登出处理函数
         async function handleSignOut() {
